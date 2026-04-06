@@ -1,0 +1,2244 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>Navigator — Chat</title>
+    <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600;700&display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet" />
+    <style>
+      *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+      :root {
+        --brand: #276ce5;
+        --brand-dark: #0856ad;
+        --brand-light: #b3d4fc;
+        --brand-verylight: #f1f5fa;
+        --grey1: #f9f9f9;
+        --grey2: #f3f5f7;
+        --grey4: #cecece;
+        --grey5: #888;
+        --grey6: #666;
+        --grey9: #242c2e;
+        --white: #fff;
+        --shadow-sm: 0px 2px 4px rgba(0,0,0,0.08);
+        --shadow-md: 0px 6px 16px rgba(0,0,0,0.1);
+      }
+
+      body {
+        font-family: "Open Sans", "Helvetica Neue", Arial, sans-serif;
+        font-size: 16px;
+        color: var(--grey9);
+        background: var(--grey1);
+        display: flex;
+        height: 100vh;
+        overflow: hidden;
+      }
+
+      .material-symbols-outlined {
+        font-variation-settings: "FILL" 0, "wght" 400, "GRAD" 0, "opsz" 24;
+        vertical-align: middle;
+      }
+
+      /* ── Sidebar (same as landing) ── */
+      .sidebar {
+        width: 260px;
+        height: 100vh;
+        background: var(--grey1);
+        border-right: 1px solid var(--grey2);
+        display: flex;
+        flex-direction: column;
+        flex-shrink: 0;
+        overflow: hidden;
+        transition: width 0.2s ease;
+      }
+
+      .sidebar.collapsed { width: 0; }
+
+      .sidebar-inner {
+        width: 260px;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        padding: 12px 0;
+      }
+
+      .sidebar-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 4px 12px 12px;
+        flex-shrink: 0;
+      }
+
+      .sidebar-title {
+        font-size: 17px;
+        font-weight: 700;
+        color: var(--grey9);
+        letter-spacing: -0.3px;
+      }
+
+      .icon-btn {
+        width: 30px;
+        height: 30px;
+        border-radius: 6px;
+        border: none;
+        background: transparent;
+        color: var(--grey5);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: background 0.12s, color 0.12s;
+        flex-shrink: 0;
+      }
+
+      .icon-btn:hover { background: var(--grey2); color: var(--grey9); }
+      .icon-btn .material-symbols-outlined { font-size: 20px; }
+
+      .icon-btn-new {
+        background: var(--brand);
+        color: var(--white);
+        border-radius: 50%;
+        border: none;
+      }
+
+      .icon-btn-new:hover { background: var(--brand-dark); color: var(--white); }
+
+      .sidebar-nav {
+        padding: 0 8px 8px;
+        flex-shrink: 0;
+      }
+
+      .nav-item {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 8px 10px;
+        border-radius: 3px;
+        cursor: pointer;
+        text-decoration: none;
+        color: var(--grey9);
+        font-size: 14px;
+        transition: background 0.12s;
+        white-space: nowrap;
+      }
+
+      .nav-item:hover { background: var(--grey2); }
+      .nav-item .material-symbols-outlined { font-size: 18px; color: var(--grey5); }
+
+      .nav-item-new { font-weight: 600; color: var(--brand); }
+
+      .nav-item-new .new-icon {
+        width: 22px;
+        height: 22px;
+        border-radius: 50%;
+        background: var(--brand);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+      }
+
+      .nav-item-new .new-icon .material-symbols-outlined { font-size: 14px; color: var(--white); }
+
+      .sidebar-divider { height: 1px; background: var(--grey2); margin: 4px 12px 8px; }
+
+      .sidebar-recents {
+        flex: 1;
+        overflow-y: auto;
+        padding: 0 8px;
+      }
+
+      .sidebar-recents::-webkit-scrollbar { width: 4px; }
+      .sidebar-recents::-webkit-scrollbar-thumb { background: var(--grey4); border-radius: 4px; }
+
+      .recents-label {
+        font-size: 11px;
+        font-weight: 700;
+        color: var(--grey5);
+        padding: 4px 10px 6px;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+      }
+
+      .recent-item {
+        display: block;
+        padding: 6px 10px;
+        border-radius: 3px;
+        cursor: pointer;
+        text-decoration: none;
+        color: var(--grey6);
+        font-size: 13px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        transition: background 0.12s, color 0.12s;
+      }
+
+      .recent-item:hover { background: var(--grey2); color: var(--grey9); }
+      .recent-item.active { background: var(--brand-verylight); color: var(--brand); font-weight: 600; }
+
+      .sidebar-footer {
+        padding: 12px 12px 8px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex-shrink: 0;
+        border-top: 1px solid var(--grey2);
+        margin-top: 8px;
+      }
+
+      .user-avatar {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        background: var(--brand);
+        color: var(--white);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 13px;
+        font-weight: 700;
+        flex-shrink: 0;
+      }
+
+      .user-name { font-size: 13px; font-weight: 600; color: var(--grey9); }
+      .user-plan { font-size: 11px; color: var(--grey5); }
+
+      /* ── Collapsed strip ── */
+      .collapsed-strip {
+        display: none;
+        width: 52px;
+        height: 100vh;
+        background: var(--grey1);
+        border-right: 1px solid var(--grey2);
+        flex-direction: column;
+        align-items: center;
+        padding: 12px 0;
+        gap: 4px;
+        flex-shrink: 0;
+      }
+
+      .collapsed-strip.visible { display: flex; }
+
+      /* ── Workspace (center + right) ── */
+      .workspace {
+        flex: 1;
+        display: flex;
+        overflow: hidden;
+        position: relative;
+      }
+
+      /* ── Center chat pane ── */
+      .chat-pane {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        background: var(--white);
+        border-right: 1px solid var(--grey2);
+        transition: flex 0.2s ease;
+      }
+
+      .chat-pane.hidden { display: none; }
+
+      .chat-messages {
+        flex: 1;
+        overflow-y: auto;
+        padding: 32px 24px 16px;
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+      }
+
+      .chat-messages::-webkit-scrollbar { width: 4px; }
+      .chat-messages::-webkit-scrollbar-thumb { background: var(--grey2); border-radius: 4px; }
+
+      /* User message bubble */
+      .msg-user {
+        display: flex;
+        justify-content: flex-end;
+      }
+
+      .msg-user-bubble {
+        background: var(--brand-verylight);
+        border: 1px solid var(--brand-light);
+        border-radius: 12px 12px 2px 12px;
+        padding: 12px 16px;
+        max-width: 75%;
+        font-size: 14px;
+        color: var(--grey9);
+        line-height: 1.6;
+      }
+
+      /* AI message */
+      .msg-ai {
+        display: flex;
+        gap: 10px;
+        align-items: flex-start;
+      }
+
+      .msg-ai-avatar {
+        width: 28px;
+        height: 28px;
+        border-radius: 50%;
+        background: var(--brand);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        margin-top: 2px;
+      }
+
+      .msg-ai-avatar svg { width: 14px; height: 14px; }
+
+      .msg-ai-bubble {
+        background: var(--grey1);
+        border: 1px solid var(--grey2);
+        border-radius: 2px 12px 12px 12px;
+        padding: 12px 16px;
+        max-width: 85%;
+        font-size: 14px;
+        color: var(--grey9);
+        line-height: 1.6;
+      }
+
+      /* ── Structured input card — docked above the chat input ── */
+
+      .input-card-wrap {
+        display: none;
+        flex-direction: column;
+        margin-bottom: 10px;
+      }
+
+      .input-card-wrap.visible {
+        display: flex;
+      }
+
+      .input-card {
+        background: var(--white);
+        border: 1px solid var(--grey4);
+        border-radius: 8px;
+        box-shadow: 0px 4px 12px rgba(0,0,0,0.10);
+        overflow: hidden;
+        position: relative;
+      }
+
+      /* Progress bar — sits flush at very top of card */
+      .input-card-progress {
+        height: 3px;
+        background: var(--grey2);
+        position: relative;
+        flex-shrink: 0;
+      }
+
+      .input-card-progress-fill {
+        position: absolute;
+        top: 0;
+        left: 0;
+        height: 100%;
+        background: var(--brand);
+        border-radius: 0 3px 3px 0;
+        transition: width 0.3s ease;
+      }
+
+      /* Question header — flex row for question + step indicator */
+      .input-card-question {
+        padding: 12px 16px 10px;
+        border-bottom: 1px solid var(--grey2);
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 8px;
+      }
+
+      .input-card-question-text {
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--grey9);
+        line-height: 1.4;
+        flex: 1;
+      }
+
+      .input-card-step-indicator {
+        font-size: 11px;
+        color: var(--grey5);
+        white-space: nowrap;
+        flex-shrink: 0;
+        padding-top: 1px;
+      }
+
+      .input-card-close-btn {
+        width: 24px;
+        height: 24px;
+        border-radius: 4px;
+        border: none;
+        background: transparent;
+        color: var(--grey5);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        flex-shrink: 0;
+        padding: 0;
+        transition: background 0.12s, color 0.12s;
+        margin-left: 2px;
+      }
+
+      .input-card-close-btn:hover {
+        background: var(--grey2);
+        color: var(--grey9);
+      }
+
+      .input-card-close-btn .material-symbols-outlined {
+        font-size: 16px;
+      }
+
+      .input-card-options {
+        list-style: none;
+      }
+
+      .input-card-row {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 11px 16px;
+        border-bottom: 1px solid var(--grey2);
+        cursor: pointer;
+        transition: background 0.1s;
+        user-select: none;
+      }
+
+      .input-card-row:last-child {
+        border-bottom: none;
+      }
+
+      .input-card-row:hover {
+        background: #f9f9f9;
+      }
+
+      .input-card-row.focused {
+        background: var(--grey2);
+      }
+
+      /* ── "Something else" row ── */
+
+      .input-card-row--se {
+        border-top: 1.5px solid var(--grey4);
+        border-bottom: none;
+        color: var(--grey5);
+        gap: 0;
+      }
+
+      /* override the generic :last-child border-bottom removal — already none */
+      .input-card-row--se:hover {
+        background: var(--grey2);
+      }
+
+      .input-card-row--se.focused {
+        background: var(--grey2);
+      }
+
+      /* expanded: row gets a subtle highlight and shows the input */
+      .input-card-row--se.se-expanded {
+        background: #f5f8ff;
+        border-top-color: var(--grey4);
+      }
+
+      .input-card-row--se.se-expanded:hover {
+        background: #f5f8ff;
+      }
+
+      /* filled: typed text in normal black + brand checkmark */
+      .input-card-row--se.se-filled {
+        color: var(--grey9);
+      }
+
+      /* prevent the blue tint from .checked-single leaking onto the SE row */
+      .input-card-row--se.se-filled.checked-single,
+      .input-card-row--se.se-filled.checked-single:hover {
+        background: var(--white);
+      }
+
+      /* the SE label text */
+      .se-label {
+        font-size: 13px;
+        color: inherit;
+        flex: 1;
+        pointer-events: none;
+      }
+
+      /* brand checkmark icon shown when filled */
+      .se-check {
+        display: none;
+        width: 16px;
+        height: 16px;
+        flex-shrink: 0;
+        color: var(--brand);
+        margin-right: 0;
+      }
+
+      .se-check svg {
+        width: 16px;
+        height: 16px;
+      }
+
+      .input-card-row--se.se-filled .se-check {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      /* inline text input — appears instead of label when expanded */
+      .se-input-wrap {
+        display: none;
+        flex: 1;
+        align-items: center;
+      }
+
+      .input-card-row--se.se-expanded .se-input-wrap {
+        display: flex;
+      }
+
+      .input-card-row--se.se-expanded .se-label {
+        display: none;
+      }
+
+      .input-card-row--se.se-expanded .se-check {
+        display: none;
+      }
+
+      .se-input {
+        flex: 1;
+        border: none;
+        border-bottom: 1.5px solid var(--brand);
+        outline: none;
+        background: transparent;
+        font-family: inherit;
+        font-size: 13px;
+        color: var(--grey9);
+        padding: 2px 0 3px;
+        line-height: 1.4;
+      }
+
+      .se-input::placeholder {
+        color: #b8b8b8;
+        font-style: italic;
+      }
+
+      /* Single-select: checked row gets brand tint */
+      .input-card-row.checked-single {
+        background: var(--brand-verylight);
+      }
+
+      .input-card-row.checked-single:hover {
+        background: var(--brand-verylight);
+      }
+
+      /* Custom checkbox (multi-select) */
+      .input-card-checkbox {
+        width: 16px;
+        height: 16px;
+        border: 1.5px solid var(--grey4);
+        border-radius: 3px;
+        background: var(--white);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        transition: background 0.1s, border-color 0.1s;
+      }
+
+      .input-card-checkbox svg {
+        display: none;
+        width: 10px;
+        height: 10px;
+      }
+
+      .input-card-row.checked .input-card-checkbox {
+        background: var(--brand);
+        border-color: var(--brand);
+      }
+
+      .input-card-row.checked .input-card-checkbox svg {
+        display: block;
+      }
+
+      /* Custom radio (single-select) */
+      .input-card-radio {
+        width: 16px;
+        height: 16px;
+        border: 1.5px solid var(--grey4);
+        border-radius: 50%;
+        background: var(--white);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        transition: background 0.1s, border-color 0.1s;
+      }
+
+      .input-card-radio-dot {
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        background: var(--white);
+        transition: background 0.1s;
+      }
+
+      .input-card-row.checked-single .input-card-radio {
+        border-color: var(--brand);
+        background: var(--brand);
+      }
+
+      .input-card-row.checked-single .input-card-radio-dot {
+        background: var(--white);
+      }
+
+      .input-card-label {
+        font-size: 13px;
+        color: var(--grey9);
+        flex: 1;
+      }
+
+      /* Bottom bar */
+      .input-card-footer {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 9px 12px 9px 16px;
+        border-top: 1px solid var(--grey2);
+        background: var(--grey1);
+      }
+
+      .input-card-count {
+        font-size: 12px;
+        color: var(--grey5);
+      }
+
+      /* Back button — left side of footer on step 2+ */
+      .input-card-back {
+        font-size: 12px;
+        font-weight: 600;
+        color: var(--grey6);
+        background: none;
+        border: none;
+        cursor: pointer;
+        padding: 4px 6px;
+        font-family: inherit;
+        border-radius: 4px;
+        transition: color 0.1s, background 0.1s;
+        display: none;
+      }
+
+      .input-card-back.visible {
+        display: inline-flex;
+        align-items: center;
+        gap: 2px;
+      }
+
+      .input-card-back:hover {
+        color: var(--grey9);
+        background: var(--grey2);
+      }
+
+      .input-card-actions {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .input-card-skip {
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--grey6);
+        background: none;
+        border: none;
+        cursor: pointer;
+        padding: 4px 6px;
+        font-family: inherit;
+        border-radius: 4px;
+        transition: color 0.1s, background 0.1s;
+      }
+
+      .input-card-skip:hover {
+        color: var(--grey9);
+        background: var(--grey2);
+      }
+
+      .input-card-submit {
+        width: 30px;
+        height: 30px;
+        border-radius: 6px;
+        background: var(--brand);
+        border: none;
+        color: var(--white);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: background 0.12s;
+        flex-shrink: 0;
+      }
+
+      .input-card-submit:hover {
+        background: var(--brand-dark);
+      }
+
+      .input-card-submit .material-symbols-outlined {
+        font-size: 16px;
+      }
+
+      /* Keyboard hint bar */
+      .input-card-hint {
+        font-size: 11px;
+        color: var(--grey5);
+        padding: 5px 4px 0;
+        line-height: 1.4;
+      }
+
+      /* Group label pill — inside card header, above the question */
+      .input-card-group-pill {
+        display: inline-block;
+        font-size: 10px;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        padding: 2px 8px;
+        border-radius: 20px;
+        background: var(--brand);
+        color: #fff;
+        margin-bottom: 5px;
+        line-height: 1.5;
+      }
+
+      /* Group transition overlay — shown between groups */
+      .input-card-group-transition {
+        display: none;
+        align-items: center;
+        justify-content: center;
+        padding: 22px 16px;
+        gap: 8px;
+        font-size: 13px;
+        font-weight: 600;
+        color: #01c270;
+      }
+
+      .input-card-group-transition.visible {
+        display: flex;
+      }
+
+      .input-card-group-transition .check-icon {
+        font-size: 18px;
+        color: #01c270;
+      }
+
+      /* Group progress dots — below the card */
+      .input-card-group-dots {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 7px;
+        padding: 6px 0 2px;
+      }
+
+      .group-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: #cecece;
+        transition: background 0.25s ease;
+        flex-shrink: 0;
+      }
+
+      .group-dot.active {
+        background: var(--brand);
+      }
+
+      .group-dot.complete {
+        background: #01c270;
+      }
+
+      /* Group tab cards */
+      .group-cards {
+        display: flex;
+        gap: 10px;
+        padding: 4px 0 8px;
+      }
+
+      .group-card {
+        flex: 1;
+        padding: 14px;
+        border-radius: 6px;
+        border: 1.5px solid var(--grey2);
+        background: var(--white);
+        cursor: pointer;
+        transition: border-color 0.12s, box-shadow 0.12s;
+      }
+
+      .group-card:hover { border-color: var(--brand-light); box-shadow: var(--shadow-sm); }
+
+      .group-card.active {
+        border-color: var(--brand);
+        background: var(--brand-verylight);
+        box-shadow: var(--shadow-sm);
+      }
+
+      .group-card-tag {
+        display: inline-block;
+        font-size: 9px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.07em;
+        padding: 2px 8px;
+        border-radius: 20px;
+        margin-bottom: 8px;
+      }
+
+      .tag-a { background: var(--brand-verylight); color: var(--brand); }
+      .tag-b { background: #e8f5e9; color: #2e7d32; }
+      .tag-c { background: #fde8e8; color: #c62828; }
+
+      .group-card-title {
+        font-size: 13px;
+        font-weight: 700;
+        color: var(--grey9);
+        line-height: 1.3;
+      }
+
+      .group-card-meta {
+        font-size: 11px;
+        color: var(--grey5);
+        margin-top: 4px;
+      }
+
+      /* Chat input */
+      .chat-input-area {
+        padding: 12px 24px 16px;
+        border-top: 1px solid var(--grey2);
+        background: var(--white);
+        flex-shrink: 0;
+      }
+
+      .chat-input-box {
+        display: flex;
+        align-items: flex-end;
+        gap: 8px;
+        background: var(--white);
+        border: 1px solid #e0e0e0;
+        border-radius: 8px;
+        padding: 10px 10px 10px 14px;
+        transition: border-color 0.15s, box-shadow 0.15s, opacity 0.2s ease;
+      }
+
+      .chat-input-box.chat-input-hidden {
+        opacity: 0;
+        pointer-events: none;
+      }
+
+      .chat-input-box:focus-within {
+        border-color: var(--brand-light);
+        box-shadow: 0 0 0 3px rgba(39,108,229,0.07);
+      }
+
+      .chat-textarea {
+        flex: 1;
+        border: none;
+        outline: none;
+        background: transparent;
+        font-family: inherit;
+        font-size: 14px;
+        color: var(--grey9);
+        resize: none;
+        line-height: 1.5;
+        max-height: 120px;
+        padding: 2px 0;
+      }
+
+      .chat-textarea::placeholder { color: #b8b8b8; }
+
+      .send-btn {
+        width: 30px;
+        height: 30px;
+        border-radius: 7px;
+        background: var(--brand);
+        border: none;
+        color: var(--white);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        flex-shrink: 0;
+        transition: background 0.12s, transform 0.1s;
+        margin-bottom: 1px;
+      }
+
+      .send-btn:hover { background: var(--brand-dark); transform: scale(1.05); }
+      .send-btn:active { transform: scale(0.96); }
+      .send-btn .material-symbols-outlined { font-size: 15px; font-variation-settings: "FILL" 1, "wght" 500, "GRAD" 0, "opsz" 20; }
+
+      /* ── Results pane ── */
+      .results-pane {
+        width: 340px;
+        height: 100vh;
+        background: var(--white);
+        display: flex;
+        flex-direction: column;
+        flex-shrink: 0;
+        transition: width 0.25s ease, opacity 0.25s ease;
+        overflow: hidden;
+      }
+
+      .results-pane.slide-in-start {
+        width: 0;
+        opacity: 0;
+      }
+
+      .results-pane.expanded {
+        width: 100%;
+        position: absolute;
+        right: 0;
+        top: 0;
+        z-index: 20;
+      }
+
+      .results-header {
+        padding: 20px 20px 12px;
+        border-bottom: 1px solid var(--grey2);
+        flex-shrink: 0;
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+      }
+
+      .results-title {
+        font-size: 16px;
+        font-weight: 700;
+        color: var(--grey9);
+      }
+
+      .results-meta {
+        font-size: 11px;
+        color: var(--grey5);
+        margin-top: 2px;
+      }
+
+      .results-expand-btn {
+        width: 28px;
+        height: 28px;
+        border-radius: 4px;
+        border: none;
+        background: transparent;
+        color: var(--grey5);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: background 0.12s;
+        flex-shrink: 0;
+      }
+
+      .results-expand-btn:hover { background: var(--grey2); color: var(--grey9); }
+      .results-expand-btn .material-symbols-outlined { font-size: 18px; }
+
+      /* Active group pill in results header */
+      .results-group-pill {
+        display: inline-block;
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 0.03em;
+        padding: 2px 10px;
+        border-radius: 20px;
+        background: var(--brand-verylight);
+        color: var(--brand);
+        border: 1px solid var(--brand-light);
+        margin-top: 5px;
+        line-height: 1.5;
+      }
+
+      .results-list {
+        flex: 1;
+        overflow-y: auto;
+        padding: 16px 20px;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+      }
+
+      .results-list::-webkit-scrollbar { width: 4px; }
+      .results-list::-webkit-scrollbar-thumb { background: var(--grey2); border-radius: 4px; }
+
+      /* Service card */
+      .service-card {
+        border: 1px solid var(--grey2);
+        border-radius: 6px;
+        padding: 16px;
+        background: var(--white);
+        transition: box-shadow 0.12s, border-color 0.12s;
+      }
+
+      .service-card:hover { border-color: var(--brand-light); box-shadow: var(--shadow-sm); }
+
+      .service-card-top {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 10px;
+      }
+
+      .service-tags { display: flex; flex-wrap: wrap; gap: 4px; }
+
+      .service-tag {
+        font-size: 9px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        padding: 2px 7px;
+        border-radius: 2px;
+      }
+
+      .tag-match { background: #e8f5e9; color: #2e7d32; }
+      .tag-housing { background: var(--brand-verylight); color: var(--brand); }
+      .tag-relaxed { background: var(--grey2); color: var(--grey5); }
+
+      .service-score {
+        font-size: 20px;
+        font-weight: 700;
+        color: var(--brand);
+        line-height: 1;
+        flex-shrink: 0;
+      }
+
+      .service-score-label { font-size: 9px; color: var(--grey4); text-align: right; font-weight: 600; text-transform: uppercase; }
+
+      .service-name {
+        font-size: 14px;
+        font-weight: 700;
+        color: var(--grey9);
+        margin-bottom: 4px;
+      }
+
+      .service-desc {
+        font-size: 12px;
+        color: var(--grey5);
+        line-height: 1.5;
+        margin-bottom: 10px;
+      }
+
+      .service-meta {
+        display: flex;
+        flex-direction: column;
+        gap: 3px;
+        margin-bottom: 12px;
+      }
+
+      .service-meta-row {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 11px;
+        color: var(--grey5);
+      }
+
+      .service-meta-row .material-symbols-outlined { font-size: 14px; color: var(--grey4); }
+
+      .service-actions { display: flex; gap: 8px; }
+
+      .btn-primary {
+        flex: 1;
+        padding: 8px;
+        background: var(--brand);
+        color: var(--white);
+        border: none;
+        border-radius: 4px;
+        font-size: 12px;
+        font-weight: 600;
+        font-family: inherit;
+        cursor: pointer;
+        transition: background 0.12s;
+      }
+
+      .btn-primary:hover { background: var(--brand-dark); }
+
+      .btn-icon {
+        width: 34px;
+        height: 34px;
+        border: 1px solid var(--grey2);
+        border-radius: 4px;
+        background: var(--white);
+        color: var(--grey5);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: background 0.12s;
+        flex-shrink: 0;
+      }
+
+      .btn-icon:hover { background: var(--grey1); color: var(--grey9); }
+      .btn-icon .material-symbols-outlined { font-size: 16px; }
+
+      .results-footer {
+        padding: 12px 20px;
+        border-top: 1px solid var(--grey2);
+        display: flex;
+        gap: 8px;
+        flex-shrink: 0;
+      }
+
+      .btn-secondary {
+        flex: 1;
+        padding: 9px;
+        background: var(--white);
+        color: var(--grey9);
+        border: 1px solid var(--grey2);
+        border-radius: 4px;
+        font-size: 12px;
+        font-weight: 600;
+        font-family: inherit;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        transition: background 0.12s;
+      }
+
+      .btn-secondary:hover { background: var(--grey1); }
+      .btn-secondary .material-symbols-outlined { font-size: 15px; }
+
+      /* ── AI Rationale card ── */
+      .rationale-card {
+        background: var(--brand-verylight);
+        border: 1px solid var(--brand-light);
+        border-radius: 6px;
+        overflow: hidden;
+        flex-shrink: 0;
+      }
+
+      .rationale-header {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        padding: 9px 12px;
+        cursor: pointer;
+        user-select: none;
+      }
+
+      .rationale-header:hover {
+        background: rgba(39, 108, 229, 0.05);
+      }
+
+      .rationale-icon {
+        font-size: 16px;
+        color: var(--brand);
+        flex-shrink: 0;
+        font-variation-settings: "FILL" 1, "wght" 400, "GRAD" 0, "opsz" 20;
+      }
+
+      .rationale-label {
+        font-size: 12px;
+        font-weight: 700;
+        color: var(--brand);
+        flex: 1;
+      }
+
+      .rationale-chevron {
+        font-size: 16px;
+        color: var(--brand);
+        flex-shrink: 0;
+        transition: transform 0.18s ease;
+      }
+
+      .rationale-card.open .rationale-chevron {
+        transform: rotate(180deg);
+      }
+
+      .rationale-body {
+        display: none;
+        padding: 0 12px 11px;
+      }
+
+      .rationale-card.open .rationale-body {
+        display: block;
+      }
+
+      .rationale-text {
+        font-size: 12px;
+        color: var(--grey6);
+        line-height: 1.6;
+        border-top: 1px solid var(--brand-light);
+        padding-top: 9px;
+      }
+
+      /* ── Results group switcher pills ── */
+      #resultsPills {
+        padding: 10px 20px;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        border-bottom: 1px solid var(--grey2);
+        flex-shrink: 0;
+        flex-wrap: wrap;
+      }
+
+      .rp-pill {
+        display: inline-flex;
+        align-items: center;
+        font-size: 11px;
+        font-weight: 600;
+        padding: 4px 10px;
+        border-radius: 20px;
+        border: 1px solid var(--grey4);
+        background: var(--white);
+        color: var(--grey6);
+        cursor: pointer;
+        white-space: nowrap;
+        transition: background 0.12s, border-color 0.12s, color 0.12s;
+        line-height: 1.4;
+        user-select: none;
+      }
+
+      .rp-pill:hover {
+        background: var(--brand-verylight);
+        border-color: var(--brand);
+        color: var(--brand);
+      }
+
+      .rp-pill.active {
+        background: var(--brand);
+        border-color: var(--brand);
+        color: var(--white);
+      }
+
+      .rp-pill.active:hover {
+        background: var(--brand-dark);
+        border-color: var(--brand-dark);
+        color: var(--white);
+      }
+    </style>
+  </head>
+  <body>
+
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-inner">
+        <div class="sidebar-header">
+          <span class="sidebar-title">Navigator</span>
+          <button class="icon-btn" onclick="toggleSidebar()" title="Close sidebar">
+            <span class="material-symbols-outlined">menu</span>
+          </button>
+        </div>
+        <div class="sidebar-nav">
+          <a class="nav-item nav-item-new" href="landing.html">
+            <span class="new-icon"><span class="material-symbols-outlined">add</span></span>
+            New Search
+          </a>
+          <a class="nav-item" href="#">
+            <span class="material-symbols-outlined">bookmark</span>
+            Collections
+          </a>
+        </div>
+        <div class="sidebar-divider"></div>
+        <div class="sidebar-recents">
+          <div class="recents-label">Recents</div>
+          <a class="recent-item active" href="#">Shelter near Larkin St for 3 groups</a>
+          <a class="recent-item" href="#">HIV resources Tenderloin — youth</a>
+          <a class="recent-item" href="#">Urgent medical care SoMa adult male</a>
+          <a class="recent-item" href="#">Women's shelter Mission District</a>
+          <a class="recent-item" href="#">Food pantry + case management SoMa</a>
+        </div>
+        <div class="sidebar-footer">
+          <div class="user-avatar">M</div>
+          <div>
+            <div class="user-name">Marcus T.</div>
+            <div class="user-plan">Case Worker</div>
+          </div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Collapsed strip -->
+    <div class="collapsed-strip" id="collapsedStrip">
+      <button class="icon-btn" onclick="toggleSidebar()" title="Open sidebar">
+        <span class="material-symbols-outlined">menu</span>
+      </button>
+      <button class="icon-btn icon-btn-new" title="New search">
+        <span class="material-symbols-outlined">add</span>
+      </button>
+      <button class="icon-btn" title="Collections">
+        <span class="material-symbols-outlined">bookmark</span>
+      </button>
+    </div>
+
+    <!-- Workspace -->
+    <div class="workspace">
+
+      <!-- Center chat pane -->
+      <main class="chat-pane" id="chatPane">
+        <div class="chat-messages" id="chatMessages">
+
+          <!-- User message -->
+          <div class="msg-user">
+            <div class="msg-user-bubble">
+              I have a group of people near Larkin Street. One group needs shelter, another needs health resources, and a third needs urgent medical care.
+            </div>
+          </div>
+
+          <!-- AI clarification message -->
+          <div class="msg-ai">
+            <div class="msg-ai-avatar">
+              <svg viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path fill-rule="evenodd" clip-rule="evenodd" d="M8.91279 0C11.2945 0 13.5333 0.935852 15.2173 2.63564C16.9016 4.33568 17.829 6.59608 17.829 8.99986C17.829 11.4039 16.9016 13.664 15.2173 15.3638C13.5331 17.0639 11.2937 18 8.91201 18C6.53032 18 4.29147 17.0641 2.60723 15.3641C-0.869294 11.8549 -0.869034 6.14507 2.60775 2.63617C4.292 0.936111 6.53111 0 8.91279 0ZM13.3094 5.68216C14.7634 7.64337 14.7634 10.3566 13.3094 12.3179L14.6326 13.6532C15.6861 12.339 16.2596 10.7139 16.2596 8.99988C16.2596 7.28557 15.6861 5.66077 14.6329 4.34625L13.3094 5.68216ZM6.13634 11.8024C4.60539 10.2571 4.60539 7.74292 6.13634 6.1976C6.878 5.44925 7.86401 5.03677 8.91253 5.03677C9.96106 5.03677 10.9471 5.44925 11.6887 6.1976C13.2197 7.74292 13.2197 10.2571 11.6887 11.8024C10.9471 12.5508 9.96106 12.9632 8.91253 12.9632C7.86401 12.9632 6.878 12.5508 6.13634 11.8024ZM12.1999 4.56174L13.5229 3.22635C12.2211 2.16296 10.6112 1.5844 8.91281 1.5844C7.2147 1.5844 5.60476 2.16322 4.30247 3.22662L5.62517 4.56174C6.56983 3.84586 7.71018 3.45293 8.91255 3.45293C10.1149 3.45293 11.2553 3.84586 12.1999 4.56174ZM3.19271 4.34677L4.51593 5.68242C3.06191 7.64363 3.06191 10.3569 4.51593 12.3181L3.19245 13.654C1.02868 10.9479 1.02868 7.05264 3.19271 4.34677ZM5.62515 13.4385L4.30219 14.7739C5.60448 15.8373 7.21391 16.4159 8.912 16.4159C10.6104 16.4159 12.2203 15.837 13.5226 14.7737L12.1999 13.4385C11.2552 14.1544 10.1149 14.5473 8.91253 14.5473C7.71017 14.5473 6.56983 14.1544 5.62515 13.4385Z" fill="white"/>
+              </svg>
+            </div>
+            <div class="msg-ai-bubble">
+              I can help with that. Before I find matches, I need a bit more info about each group. Can you tell me the eligibilities for the people needing shelter?
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Chat input -->
+        <div class="chat-input-area" id="chatInputArea">
+
+          <!-- Structured input card — stepped flow -->
+          <div class="input-card-wrap visible" id="inputCardWrap">
+            <div class="input-card" id="inputCard">
+
+              <!-- Progress bar -->
+              <div class="input-card-progress">
+                <div class="input-card-progress-fill" id="inputCardProgressFill" style="width: 50%"></div>
+              </div>
+
+              <!-- Group transition screen (shown briefly between groups) -->
+              <div class="input-card-group-transition" id="inputCardGroupTransition">
+                <span class="material-symbols-outlined check-icon">check_circle</span>
+                <span id="inputCardGroupTransitionText">Group A complete</span>
+              </div>
+
+              <!-- Question header -->
+              <div class="input-card-question" id="inputCardQuestionHeader">
+                <div style="flex:1; min-width:0;">
+                  <div class="input-card-group-pill" id="inputCardGroupPill">Group A &middot; Shelter</div>
+                  <span class="input-card-question-text" id="inputCardQuestion">How old are the people needing shelter?</span>
+                </div>
+                <span class="input-card-step-indicator" id="inputCardStepIndicator">Step 1 of 2</span>
+                <button class="input-card-close-btn" id="inputCardCloseBtn" aria-label="Dismiss" title="Dismiss (Esc)">
+                  <span class="material-symbols-outlined">close</span>
+                </button>
+              </div>
+
+              <!-- Options list -->
+              <ul class="input-card-options" id="inputCardOptions" role="listbox" aria-multiselectable="false">
+                <!-- rows injected by JS -->
+              </ul>
+
+              <!-- Footer -->
+              <div class="input-card-footer">
+                <button class="input-card-back" id="inputCardBack" type="button">&#8592; Back</button>
+                <div class="input-card-actions">
+                  <span class="input-card-count" id="inputCardCount" style="margin-right: 4px"></span>
+                  <button class="input-card-skip" id="inputCardSkip" type="button">Skip</button>
+                  <button class="input-card-submit" id="inputCardSubmit" type="button" title="Submit (⌘ Enter)" style="display:none">
+                    <span class="material-symbols-outlined">arrow_upward</span>
+                  </button>
+                </div>
+              </div>
+
+            </div>
+            <div class="input-card-hint" id="inputCardHint">↑↓ to navigate &middot; Enter to select &middot; Esc to skip</div>
+            <div class="input-card-group-dots" id="inputCardGroupDots">
+              <span class="group-dot active" id="groupDot0"></span>
+              <span class="group-dot" id="groupDot1"></span>
+              <span class="group-dot" id="groupDot2"></span>
+            </div>
+          </div>
+
+          <div class="chat-input-box chat-input-hidden" id="chatInputBox">
+            <textarea class="chat-textarea" id="chatTextarea" placeholder="Message..." rows="1"></textarea>
+            <button class="send-btn" aria-label="Send message">
+              <span class="material-symbols-outlined">arrow_upward</span>
+            </button>
+          </div>
+        </div>
+      </main>
+
+      <!-- Results pane -->
+      <aside class="results-pane" id="resultsPane" style="display:none">
+        <div class="results-header">
+          <div>
+            <div class="results-title">Matched Services</div>
+            <div id="resultsPanelGroupLabel" class="results-group-pill">Group A &middot; Shelter</div>
+          </div>
+          <button class="results-expand-btn" onclick="toggleExpand()" title="Expand">
+            <span class="material-symbols-outlined" id="expandIcon">open_in_full</span>
+          </button>
+        </div>
+
+        <!-- Group switcher pills -->
+        <div id="resultsPills">
+          <button class="rp-pill active" data-group-index="0" onclick="switchResultsPill(0)">Group A &middot; Shelter</button>
+          <button class="rp-pill" data-group-index="1" onclick="switchResultsPill(1)">Group B &middot; Health Resources</button>
+          <button class="rp-pill" data-group-index="2" onclick="switchResultsPill(2)">Group C &middot; Urgent Care</button>
+        </div>
+
+        <div class="results-list">
+
+          <!-- AI Rationale card -->
+          <div class="rationale-card" id="rationaleCard">
+            <div class="rationale-header" id="rationaleHeader" role="button" aria-expanded="false" aria-controls="rationaleBody" tabindex="0">
+              <span class="material-symbols-outlined rationale-icon">auto_awesome</span>
+              <span class="rationale-label">Why these results?</span>
+              <span class="material-symbols-outlined rationale-chevron">expand_more</span>
+            </div>
+            <div class="rationale-body" id="rationaleBody" role="region">
+              <p class="rationale-text" id="rationaleText">Prioritized emergency shelters within 0.8mi of Larkin Street accepting single adults. Ranked by current bed availability and intake hours.</p>
+            </div>
+          </div>
+
+          <!-- Service card 1 -->
+          <div class="service-card">
+            <div class="service-card-top">
+              <div class="service-tags">
+                <span class="service-tag tag-match">Full Match</span>
+                <span class="service-tag tag-housing">Housing Priority</span>
+              </div>
+            </div>
+            <div class="service-name">Harbor City Municipal Shelter</div>
+            <div class="service-desc">Emergency shelter for single adults with case management and workforce reintegration support.</div>
+            <div class="service-meta">
+              <div class="service-meta-row">
+                <span class="material-symbols-outlined">location_on</span>
+                415 Larkin Street, San Francisco
+              </div>
+              <div class="service-meta-row">
+                <span class="material-symbols-outlined">call</span>
+                (415) 555-0192
+              </div>
+            </div>
+            <div class="service-actions">
+              <button class="btn-primary">View Details</button>
+              <button class="btn-icon"><span class="material-symbols-outlined">bookmark</span></button>
+            </div>
+          </div>
+
+          <!-- Service card 2 -->
+          <div class="service-card">
+            <div class="service-card-top">
+              <div class="service-tags">
+                <span class="service-tag tag-relaxed">Relaxed Match</span>
+              </div>
+            </div>
+            <div class="service-name">Larkin Street Youth Services</div>
+            <div class="service-desc">Supportive housing and outreach for transitional-age adults in the Tenderloin area.</div>
+            <div class="service-meta">
+              <div class="service-meta-row">
+                <span class="material-symbols-outlined">location_on</span>
+                1101 Post Street, San Francisco
+              </div>
+              <div class="service-meta-row">
+                <span class="material-symbols-outlined">call</span>
+                (415) 555-0841
+              </div>
+            </div>
+            <div class="service-actions">
+              <button class="btn-primary">View Details</button>
+              <button class="btn-icon"><span class="material-symbols-outlined">bookmark</span></button>
+            </div>
+          </div>
+
+          <!-- Service card 3 -->
+          <div class="service-card">
+            <div class="service-card-top">
+              <div class="service-tags">
+                <span class="service-tag tag-relaxed">Relaxed Match</span>
+              </div>
+            </div>
+            <div class="service-name">Tenderloin Housing Clinic</div>
+            <div class="service-desc">Legal and housing support services for low-income individuals in the Tenderloin.</div>
+            <div class="service-meta">
+              <div class="service-meta-row">
+                <span class="material-symbols-outlined">location_on</span>
+                126 Hyde Street, San Francisco
+              </div>
+              <div class="service-meta-row">
+                <span class="material-symbols-outlined">call</span>
+                (415) 555-0374
+              </div>
+            </div>
+            <div class="service-actions">
+              <button class="btn-primary">View Details</button>
+              <button class="btn-icon"><span class="material-symbols-outlined">bookmark</span></button>
+            </div>
+          </div>
+
+        </div>
+
+        <div class="results-footer">
+          <button class="btn-secondary">
+            <span class="material-symbols-outlined">print</span> Print
+          </button>
+          <button class="btn-secondary">
+            <span class="material-symbols-outlined">download</span> Export
+          </button>
+        </div>
+      </aside>
+
+    </div>
+
+    <script>
+      function toggleSidebar() {
+        const sidebar = document.getElementById('sidebar');
+        const strip = document.getElementById('collapsedStrip');
+        const isCollapsed = sidebar.classList.toggle('collapsed');
+        strip.classList.toggle('visible', isCollapsed);
+      }
+
+      let isExpanded = false;
+      function toggleExpand() {
+        const pane = document.getElementById('resultsPane');
+        const chatPane = document.getElementById('chatPane');
+        const icon = document.getElementById('expandIcon');
+        isExpanded = !isExpanded;
+        pane.classList.toggle('expanded', isExpanded);
+        chatPane.classList.toggle('hidden', isExpanded);
+        icon.textContent = isExpanded ? 'close_fullscreen' : 'open_in_full';
+      }
+
+      const GROUP_DEFS = [
+        {
+          label: 'Group A',
+          name: 'Shelter',
+          rationale: 'Prioritized emergency shelters within 0.8mi of Larkin Street accepting single adults. Ranked by current bed availability and intake hours.'
+        },
+        {
+          label: 'Group B',
+          name: 'Health Resources',
+          rationale: 'Matched clinics offering walk-in health services for all ages near Larkin Street. Filtered for facilities open today.'
+        },
+        {
+          label: 'Group C',
+          name: 'Urgent Care',
+          rationale: 'Identified urgent care and emergency medical facilities within 1mi. Sorted by proximity and wait time availability.'
+        },
+      ];
+
+      function updateResultsGroup(index) {
+        const def = GROUP_DEFS[index];
+        if (!def) return;
+
+        // Update group pill label in header
+        const pill = document.getElementById('resultsPanelGroupLabel');
+        if (pill) pill.textContent = def.label + ' \u00b7 ' + def.name;
+
+        // Update rationale text and collapse card
+        const rationaleText = document.getElementById('rationaleText');
+        if (rationaleText) rationaleText.textContent = def.rationale;
+
+        const rationaleCard = document.getElementById('rationaleCard');
+        const rationaleHeader = document.getElementById('rationaleHeader');
+        if (rationaleCard) {
+          rationaleCard.classList.remove('open');
+          if (rationaleHeader) rationaleHeader.setAttribute('aria-expanded', 'false');
+        }
+
+        // Sync results switcher pills active state
+        const pillsContainer = document.getElementById('resultsPills');
+        if (pillsContainer) {
+          pillsContainer.querySelectorAll('.rp-pill').forEach(function (p) {
+            p.classList.toggle('active', parseInt(p.dataset.groupIndex, 10) === index);
+          });
+        }
+      }
+
+      function switchResultsPill(index) {
+        // Update results panel content
+        updateResultsGroup(index);
+
+        // Sync group cards in chat (if present)
+        document.querySelectorAll('.group-card').forEach(function (c, j) {
+          c.classList.toggle('active', j === index);
+        });
+      }
+
+      // ── Rationale card toggle ─────────────────────────────────────────────
+
+      (function () {
+        const header = document.getElementById('rationaleHeader');
+        if (!header) return;
+        function toggleRationale() {
+          const card = document.getElementById('rationaleCard');
+          const isOpen = card.classList.toggle('open');
+          header.setAttribute('aria-expanded', String(isOpen));
+        }
+        header.addEventListener('click', toggleRationale);
+        header.addEventListener('keydown', function (e) {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            toggleRationale();
+          }
+        });
+      })();
+
+      // ── Structured input card — multi-group stepped flow ─────────────────
+
+      (function () {
+
+        // Group + step definitions
+        const GROUPS = [
+          {
+            label: 'Group A',
+            name:  'Shelter',
+            steps: [
+              {
+                question: 'How old are the people needing shelter?',
+                type: 'single',
+                options: [
+                  { value: 'all-ages', label: 'All Ages' },
+                  { value: 'children', label: 'Children' },
+                  { value: 'teens',    label: 'Teens' },
+                  { value: 'tay',      label: 'Transitional Aged Youth (TAY)' },
+                  { value: 'adults',   label: 'Adults' },
+                  { value: 'senior',   label: 'Senior' },
+                ]
+              },
+              {
+                question: 'What is their current housing situation?',
+                type: 'multi',
+                options: [
+                  { value: 'experiencing-homelessness', label: 'Experiencing Homelessness' },
+                  { value: 'near-homeless',             label: 'Near Homeless' },
+                  { value: 'home-renters',              label: 'Home Renters' },
+                  { value: 'in-jail',                   label: 'In Jail' },
+                  { value: 'any',                       label: 'Any' },
+                ]
+              }
+            ]
+          },
+          {
+            label: 'Group B',
+            name:  'Health Resources',
+            steps: [
+              {
+                question: 'How old are the people needing health resources?',
+                type: 'single',
+                options: [
+                  { value: 'all-ages', label: 'All Ages' },
+                  { value: 'children', label: 'Children' },
+                  { value: 'teens',    label: 'Teens' },
+                  { value: 'tay',      label: 'Transitional Aged Youth (TAY)' },
+                  { value: 'adults',   label: 'Adults' },
+                  { value: 'senior',   label: 'Senior' },
+                ]
+              },
+              {
+                question: 'Do any of these health concerns apply?',
+                type: 'multi',
+                options: [
+                  { value: 'hiv-aids',            label: 'HIV/AIDS' },
+                  { value: 'pregnant',             label: 'Pregnant' },
+                  { value: 'special-needs',        label: 'Special Needs / Disabilities' },
+                  { value: 'substance-dependency', label: 'Substance Dependency' },
+                  { value: 'any',                  label: 'Any' },
+                ]
+              }
+            ]
+          },
+          {
+            label: 'Group C',
+            name:  'Urgent Care',
+            steps: [
+              {
+                question: 'How old are the people needing urgent care?',
+                type: 'single',
+                options: [
+                  { value: 'all-ages', label: 'All Ages' },
+                  { value: 'children', label: 'Children' },
+                  { value: 'teens',    label: 'Teens' },
+                  { value: 'tay',      label: 'Transitional Aged Youth (TAY)' },
+                  { value: 'adults',   label: 'Adults' },
+                  { value: 'senior',   label: 'Senior' },
+                ]
+              }
+            ]
+          }
+        ];
+
+        // DOM refs
+        const wrap              = document.getElementById('inputCardWrap');
+        const optionsList       = document.getElementById('inputCardOptions');
+        const questionEl        = document.getElementById('inputCardQuestion');
+        const questionHeader    = document.getElementById('inputCardQuestionHeader');
+        const groupPillEl       = document.getElementById('inputCardGroupPill');
+        const stepEl            = document.getElementById('inputCardStepIndicator');
+        const progressFill      = document.getElementById('inputCardProgressFill');
+        const countEl           = document.getElementById('inputCardCount');
+        const backBtn           = document.getElementById('inputCardBack');
+        const skipBtn           = document.getElementById('inputCardSkip');
+        const submitBtn         = document.getElementById('inputCardSubmit');
+        const hintEl            = document.getElementById('inputCardHint');
+        const groupTransition   = document.getElementById('inputCardGroupTransition');
+        const groupTransText    = document.getElementById('inputCardGroupTransitionText');
+
+        // State
+        let currentGroup = 0;
+        let currentStep  = 0;
+        // selections[groupIndex][stepIndex] = Set of values
+        const selections = GROUPS.map(g => g.steps.map(() => new Set()));
+        // customText[groupIndex][stepIndex] = string | null  (the "something else" typed value)
+        const customText = GROUPS.map(g => g.steps.map(() => null));
+        let focusedIndex = -1;
+        let advancing    = false;
+        let inTransition = false;
+
+        // ── Dot helpers ──────────────────────────────────────────────────────
+
+        function updateDots() {
+          GROUPS.forEach(function (_, gi) {
+            const dot = document.getElementById('groupDot' + gi);
+            if (!dot) return;
+            dot.classList.remove('active', 'complete');
+            if (gi < currentGroup) {
+              dot.classList.add('complete');
+            } else if (gi === currentGroup) {
+              dot.classList.add('active');
+            }
+          });
+        }
+
+        // ── Build rows for current group/step ────────────────────────────────
+
+        function buildStep(groupIndex, stepIndex) {
+          const group = GROUPS[groupIndex];
+          const step  = group.steps[stepIndex];
+          const isSingle = step.type === 'single';
+          focusedIndex = -1;
+          advancing    = false;
+
+          // Show question header, hide transition
+          groupTransition.classList.remove('visible');
+          questionHeader.style.display = '';
+          optionsList.style.display = '';
+
+          // Group pill
+          groupPillEl.textContent = group.label + ' \u00b7 ' + group.name;
+
+          // Question + step indicator
+          questionEl.textContent = step.question;
+          stepEl.textContent = 'Step ' + (stepIndex + 1) + ' of ' + group.steps.length;
+
+          // Progress bar — resets per group
+          progressFill.style.width = (((stepIndex + 1) / group.steps.length) * 100) + '%';
+
+          // Back button — only if not first step of group
+          backBtn.classList.toggle('visible', stepIndex > 0);
+
+          // Submit button — only on the last step of the group when multi-select
+          const isLastStep = stepIndex === group.steps.length - 1;
+          submitBtn.style.display = (!isSingle && isLastStep) ? 'flex' : 'none';
+
+          // Hint
+          if (isSingle) {
+            hintEl.textContent = '\u2191\u2193 to navigate \u00b7 Enter to select \u00b7 Esc to skip';
+          } else {
+            hintEl.innerHTML = '\u2191\u2193 to navigate \u00b7 Enter to select \u00b7 \u2318 Enter to submit \u00b7 Esc to skip';
+          }
+
+          countEl.textContent = '';
+
+          // Render rows
+          optionsList.innerHTML = '';
+          optionsList.setAttribute('aria-multiselectable', isSingle ? 'false' : 'true');
+
+          const selected = selections[groupIndex][stepIndex];
+
+          step.options.forEach(function (opt, i) {
+            const li = document.createElement('li');
+            li.className = 'input-card-row';
+            li.dataset.value = opt.value;
+            li.setAttribute('role', 'option');
+            li.setAttribute('aria-selected', 'false');
+            li.setAttribute('tabindex', '-1');
+
+            if (isSingle) {
+              const radio = document.createElement('span');
+              radio.className = 'input-card-radio';
+              radio.setAttribute('aria-hidden', 'true');
+              const dot = document.createElement('span');
+              dot.className = 'input-card-radio-dot';
+              radio.appendChild(dot);
+              li.appendChild(radio);
+            } else {
+              const cb = document.createElement('span');
+              cb.className = 'input-card-checkbox';
+              cb.setAttribute('aria-hidden', 'true');
+              cb.innerHTML = '<svg viewBox="0 0 10 10" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M1.5 5L3.8 7.5L8.5 2.5" stroke="white" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+              li.appendChild(cb);
+            }
+
+            const label = document.createElement('span');
+            label.className = 'input-card-label';
+            label.textContent = opt.label;
+            li.appendChild(label);
+
+            if (selected.has(opt.value)) {
+              applyChecked(li, isSingle);
+            }
+
+            li.addEventListener('click', function () { handleRowClick(li, i); });
+            li.addEventListener('mouseenter', function () { setFocused(i); });
+
+            optionsList.appendChild(li);
+          });
+
+          // ── "Something else" row ──────────────────────────────────────────
+          const seLi = document.createElement('li');
+          seLi.className = 'input-card-row input-card-row--se';
+          seLi.setAttribute('role', 'option');
+          seLi.setAttribute('aria-selected', 'false');
+          seLi.setAttribute('tabindex', '-1');
+          seLi.dataset.value = '__something_else__';
+
+          // Checkmark icon (hidden until filled)
+          const seCheck = document.createElement('span');
+          seCheck.className = 'se-check';
+          seCheck.setAttribute('aria-hidden', 'true');
+          seCheck.innerHTML = '<svg viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M2.5 8.5L6 12L13.5 4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+
+          // Label (shown by default)
+          const seLabel = document.createElement('span');
+          seLabel.className = 'se-label';
+          seLabel.textContent = 'Something else';
+
+          // Input wrapper (hidden until expanded)
+          const seWrap = document.createElement('span');
+          seWrap.className = 'se-input-wrap';
+
+          const seInput = document.createElement('input');
+          seInput.type = 'text';
+          seInput.className = 'se-input';
+          seInput.placeholder = 'Describe in your own words\u2026';
+          seInput.setAttribute('aria-label', 'Describe your own answer');
+          seWrap.appendChild(seInput);
+
+          seLi.appendChild(seCheck);
+          seLi.appendChild(seLabel);
+          seLi.appendChild(seWrap);
+
+          // Restore prior custom text for this group/step if any
+          const priorText = customText[groupIndex][stepIndex];
+          if (priorText) {
+            seLi.classList.add('se-filled');
+            seLi.setAttribute('aria-selected', 'true');
+            seLabel.textContent = priorText;
+            if (isSingle) {
+              seLi.classList.add('checked-single');
+            } else {
+              seLi.classList.add('checked');
+            }
+          }
+
+          // SE row index (used for keyboard nav)
+          const seRowIndex = step.options.length;
+
+          function openSERow() {
+            seLi.classList.add('se-expanded');
+            seLi.classList.remove('se-filled', 'checked', 'checked-single');
+            seInput.value = customText[groupIndex][stepIndex] || '';
+            seInput.focus();
+          }
+
+          function commitSERow(text) {
+            const trimmed = text.trim();
+            if (!trimmed) {
+              closeSERow();
+              return;
+            }
+            customText[groupIndex][stepIndex] = trimmed;
+            seLi.classList.remove('se-expanded');
+            seLi.classList.add('se-filled');
+            seLi.setAttribute('aria-selected', 'true');
+            seLabel.textContent = trimmed;
+
+            // Remove any existing normal-option selection (single-select) or
+            // just add alongside others (multi-select) and update selection store
+            if (isSingle) {
+              // Deselect all normal rows
+              getRows().forEach(function (r) {
+                if (r !== seLi) removeChecked(r);
+              });
+              selections[groupIndex][stepIndex].clear();
+              selections[groupIndex][stepIndex].add('__something_else__:' + trimmed);
+              seLi.classList.add('checked-single');
+              advancing = true;
+              setTimeout(advanceStep, 300);
+            } else {
+              // Remove any stale SE entry from prior edit before adding the new one
+              Array.from(selections[groupIndex][stepIndex]).forEach(function (v) {
+                if (v.startsWith('__something_else__:')) selections[groupIndex][stepIndex].delete(v);
+              });
+              selections[groupIndex][stepIndex].add('__something_else__:' + trimmed);
+              seLi.classList.add('checked');
+              updateCount();
+            }
+          }
+
+          function closeSERow() {
+            seLi.classList.remove('se-expanded');
+            if (!customText[groupIndex][stepIndex]) {
+              seLabel.textContent = 'Something else';
+            }
+          }
+
+          seLi.addEventListener('mouseenter', function () { setFocused(seRowIndex); });
+
+          seLi.addEventListener('click', function (e) {
+            // If click came from inside the input, don't re-open
+            if (e.target === seInput) return;
+            if (seLi.classList.contains('se-expanded')) return;
+            setFocused(seRowIndex);
+            openSERow();
+          });
+
+          seInput.addEventListener('keydown', function (e) {
+            if (e.key === 'Enter') {
+              e.preventDefault();
+              e.stopPropagation();
+              commitSERow(seInput.value);
+            } else if (e.key === 'Escape') {
+              e.preventDefault();
+              e.stopPropagation();
+              closeSERow();
+            }
+          });
+
+          seInput.addEventListener('blur', function () {
+            // On blur, commit if there's text; otherwise collapse
+            if (seInput.value.trim()) {
+              commitSERow(seInput.value);
+            } else {
+              closeSERow();
+            }
+          });
+
+          optionsList.appendChild(seLi);
+          // ── end "Something else" row ──────────────────────────────────────
+
+          updateCount();
+          updateDots();
+        }
+
+        // ── Row helpers ───────────────────────────────────────────────────────
+
+        function getRows() {
+          return Array.from(optionsList.querySelectorAll('.input-card-row'));
+        }
+
+        function applyChecked(row, isSingle) {
+          if (isSingle) {
+            row.classList.add('checked-single');
+          } else {
+            row.classList.add('checked');
+          }
+          row.setAttribute('aria-selected', 'true');
+        }
+
+        function removeChecked(row) {
+          row.classList.remove('checked', 'checked-single');
+          row.setAttribute('aria-selected', 'false');
+        }
+
+        function setFocused(index) {
+          getRows().forEach(function (r) { r.classList.remove('focused'); });
+          const rows = getRows();
+          if (index >= 0 && index < rows.length) {
+            rows[index].classList.add('focused');
+            focusedIndex = index;
+          }
+        }
+
+        function updateCount() {
+          const step = GROUPS[currentGroup].steps[currentStep];
+          if (step.type === 'multi') {
+            const n = selections[currentGroup][currentStep].size;
+            countEl.textContent = n === 0 ? '0 selected' : n + ' selected';
+          } else {
+            countEl.textContent = '';
+          }
+        }
+
+        function handleRowClick(row, index) {
+          // SE row has its own handlers — never fall through to here
+          if (row.dataset.value === '__something_else__') return;
+          const step  = GROUPS[currentGroup].steps[currentStep];
+          const value = row.dataset.value;
+
+          if (step.type === 'single') {
+            if (advancing) return;
+            getRows().forEach(removeChecked);
+            // Also visually reset the SE row if it was filled
+            const seRow = optionsList.querySelector('.input-card-row--se');
+            if (seRow) {
+              seRow.classList.remove('se-filled', 'se-expanded', 'checked', 'checked-single');
+              const seLabel = seRow.querySelector('.se-label');
+              if (seLabel) seLabel.textContent = 'Something else';
+              customText[currentGroup][currentStep] = null;
+            }
+            selections[currentGroup][currentStep].clear();
+            applyChecked(row, true);
+            selections[currentGroup][currentStep].add(value);
+            setFocused(index);
+            advancing = true;
+            setTimeout(advanceStep, 300);
+          } else {
+            if (selections[currentGroup][currentStep].has(value)) {
+              selections[currentGroup][currentStep].delete(value);
+              removeChecked(row);
+            } else {
+              selections[currentGroup][currentStep].add(value);
+              applyChecked(row, false);
+            }
+            setFocused(index);
+            updateCount();
+          }
+        }
+
+        // ── Navigation ────────────────────────────────────────────────────────
+
+        function advanceStep() {
+          if (inTransition) return;
+          const group = GROUPS[currentGroup];
+
+          if (currentStep < group.steps.length - 1) {
+            // More steps in this group
+            currentStep++;
+            buildStep(currentGroup, currentStep);
+          } else {
+            // Last step of this group — show completion transition
+            finishGroup();
+          }
+        }
+
+        function finishGroup() {
+          inTransition = true;
+          const group = GROUPS[currentGroup];
+
+          // Hide question UI, show transition message
+          questionHeader.style.display = 'none';
+          optionsList.style.display = 'none';
+          groupTransText.textContent = group.label + ' complete';
+          groupTransition.classList.add('visible');
+          progressFill.style.width = '100%';
+
+          // Mark dot as complete immediately
+          const dot = document.getElementById('groupDot' + currentGroup);
+          if (dot) { dot.classList.remove('active'); dot.classList.add('complete'); }
+
+          setTimeout(function () {
+            inTransition = false;
+            if (currentGroup < GROUPS.length - 1) {
+              currentGroup++;
+              currentStep = 0;
+              buildStep(currentGroup, currentStep);
+            } else {
+              dismissCard(true);
+            }
+          }, 600);
+        }
+
+        function goBack() {
+          if (inTransition) return;
+          if (currentStep > 0) {
+            currentStep--;
+            buildStep(currentGroup, currentStep);
+          }
+        }
+
+        document.getElementById('inputCardCloseBtn').addEventListener('click', function() {
+          dismissCard(false);
+        });
+
+        // ── Bubble helpers ────────────────────────────────────────────────────
+
+        const AI_AVATAR_SVG = '<svg viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" clip-rule="evenodd" d="M8.91279 0C11.2945 0 13.5333 0.935852 15.2173 2.63564C16.9016 4.33568 17.829 6.59608 17.829 8.99986C17.829 11.4039 16.9016 13.664 15.2173 15.3638C13.5331 17.0639 11.2937 18 8.91201 18C6.53032 18 4.29147 17.0641 2.60723 15.3641C-0.869294 11.8549 -0.869034 6.14507 2.60775 2.63617C4.292 0.936111 6.53111 0 8.91279 0ZM13.3094 5.68216C14.7634 7.64337 14.7634 10.3566 13.3094 12.3179L14.6326 13.6532C15.6861 12.339 16.2596 10.7139 16.2596 8.99988C16.2596 7.28557 15.6861 5.66077 14.6329 4.34625L13.3094 5.68216ZM6.13634 11.8024C4.60539 10.2571 4.60539 7.74292 6.13634 6.1976C6.878 5.44925 7.86401 5.03677 8.91253 5.03677C9.96106 5.03677 10.9471 5.44925 11.6887 6.1976C13.2197 7.74292 13.2197 10.2571 11.6887 11.8024C10.9471 12.5508 9.96106 12.9632 8.91253 12.9632C7.86401 12.9632 6.878 12.5508 6.13634 11.8024ZM12.1999 4.56174L13.5229 3.22635C12.2211 2.16296 10.6112 1.5844 8.91281 1.5844C7.2147 1.5844 5.60476 2.16322 4.30247 3.22662L5.62517 4.56174C6.56983 3.84586 7.71018 3.45293 8.91255 3.45293C10.1149 3.45293 11.2553 3.84586 12.1999 4.56174ZM3.19271 4.34677L4.51593 5.68242C3.06191 7.64363 3.06191 10.3569 4.51593 12.3181L3.19245 13.654C1.02868 10.9479 1.02868 7.05264 3.19271 4.34677ZM5.62515 13.4385L4.30219 14.7739C5.60448 15.8373 7.21391 16.4159 8.912 16.4159C10.6104 16.4159 12.2203 15.837 13.5226 14.7737L12.1999 13.4385C11.2552 14.1544 10.1149 14.5473 8.91253 14.5473C7.71017 14.5473 6.56983 14.1544 5.62515 13.4385Z" fill="white"/></svg>';
+
+        function appendUserBubble(text, chatMessages) {
+          const wrap = document.createElement('div');
+          wrap.className = 'msg-user';
+          const bubble = document.createElement('div');
+          bubble.className = 'msg-user-bubble';
+          // Preserve newlines as line breaks
+          text.split('\n').forEach(function (line, i, arr) {
+            bubble.appendChild(document.createTextNode(line));
+            if (i < arr.length - 1) bubble.appendChild(document.createElement('br'));
+          });
+          wrap.appendChild(bubble);
+          chatMessages.appendChild(wrap);
+        }
+
+        function appendAIBubble(text, chatMessages) {
+          const msgWrap = document.createElement('div');
+          msgWrap.className = 'msg-ai';
+          const avatar = document.createElement('div');
+          avatar.className = 'msg-ai-avatar';
+          avatar.innerHTML = AI_AVATAR_SVG;
+          const bubble = document.createElement('div');
+          bubble.className = 'msg-ai-bubble';
+          bubble.textContent = text;
+          msgWrap.appendChild(avatar);
+          msgWrap.appendChild(bubble);
+          chatMessages.appendChild(msgWrap);
+        }
+
+        // ── Build the selection summary text for all groups ───────────────────
+
+        function buildSelectionSummary() {
+          return GROUPS.map(function (group, gi) {
+            var parts = group.steps.map(function (step, si) {
+              var sel = selections[gi][si];
+              var custom = customText[gi][si];
+              var labels = [];
+
+              // Collect labels from normal selections
+              sel.forEach(function (v) {
+                if (v.startsWith('__something_else__:')) {
+                  labels.push(v.slice('__something_else__:'.length));
+                } else {
+                  var opt = step.options.find(function (o) { return o.value === v; });
+                  if (opt) labels.push(opt.label);
+                }
+              });
+
+              // If nothing selected and there's a custom text not yet reflected in sel
+              if (labels.length === 0 && custom) {
+                labels.push(custom);
+              }
+
+              return labels.length > 0 ? labels.join(', ') : 'Any';
+            });
+            return group.label + ' \u00b7 ' + group.name + ': ' + parts.join(', ');
+          }).join('\n');
+        }
+
+        function dismissCard(completed) {
+          const chatInputBox = document.getElementById('chatInputBox');
+          const chatMessages = document.getElementById('chatMessages');
+          wrap.style.transition = 'opacity 0.2s ease';
+          wrap.style.opacity = '0';
+          setTimeout(function () {
+            wrap.classList.remove('visible');
+            wrap.style.opacity = '';
+            wrap.style.transition = '';
+            chatInputBox.classList.remove('chat-input-hidden');
+            const textarea = chatInputBox.querySelector('textarea');
+
+            if (!completed) {
+              // ── Interrupt path ────────────────────────────────────────────
+              appendUserBubble("I\u2019ll describe my needs in the message box below.", chatMessages);
+              appendAIBubble("No problem \u2014 go ahead and describe who you\u2019re helping and I\u2019ll find the best matches.", chatMessages);
+              chatMessages.scrollTop = chatMessages.scrollHeight;
+              if (textarea) textarea.focus();
+              return;
+            }
+
+            // ── Completion path ───────────────────────────────────────────
+            appendUserBubble(buildSelectionSummary(), chatMessages);
+
+            if (textarea) textarea.focus();
+
+            // ── Reveal results pane with slide-in animation ──────────────────
+            const resultsPane = document.getElementById('resultsPane');
+            resultsPane.style.display = '';          // remove inline display:none
+            resultsPane.classList.add('slide-in-start');
+
+            // Force reflow so the browser registers the start state before
+            // removing the class (triggering the CSS transition)
+            void resultsPane.offsetWidth;
+            resultsPane.classList.remove('slide-in-start');
+
+            // ── Append AI summary message + group cards to chat ──────────────
+            appendAIBubble("I\u2019ve found matches near Larkin Street for all 3 groups. Select a group tab to explore results.", chatMessages);
+
+            // Group cards row
+            const groupCardDefs = [
+              { label: 'Group A', name: 'Shelter',          tagClass: 'tag-a', meta: '14 results' },
+              { label: 'Group B', name: 'Health Resources', tagClass: 'tag-b', meta: '9 results'  },
+              { label: 'Group C', name: 'Urgent Care',      tagClass: 'tag-c', meta: '6 results'  },
+            ];
+            const cardsRow = document.createElement('div');
+            cardsRow.className = 'group-cards';
+            groupCardDefs.forEach(function (def, i) {
+              const card = document.createElement('div');
+              card.className = 'group-card' + (i === 0 ? ' active' : '');
+              card.innerHTML =
+                '<div class="group-card-tag ' + def.tagClass + '">' + def.label + '</div>' +
+                '<div class="group-card-title">' + def.name + '</div>' +
+                '<div class="group-card-meta">' + def.meta + '</div>';
+              card.addEventListener('click', function () {
+                document.querySelectorAll('.group-card').forEach(function (c, j) {
+                  c.classList.toggle('active', j === i);
+                });
+                updateResultsGroup(i);
+              });
+              cardsRow.appendChild(card);
+            });
+            chatMessages.appendChild(cardsRow);
+
+            // Scroll chat to bottom
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+          }, 200);
+        }
+
+        // ── Footer buttons ────────────────────────────────────────────────────
+
+        backBtn.addEventListener('click', goBack);
+        skipBtn.addEventListener('click', advanceStep);
+        submitBtn.addEventListener('click', advanceStep);
+
+        // ── Keyboard ──────────────────────────────────────────────────────────
+
+        document.addEventListener('keydown', function (e) {
+          if (!wrap.classList.contains('visible')) return;
+          if (inTransition) return;
+          // If the SE input is focused, let its own keydown handler take over
+          if (document.activeElement && document.activeElement.classList.contains('se-input')) return;
+          const rows = getRows();
+          const step = GROUPS[currentGroup].steps[currentStep];
+
+          if (e.key === 'ArrowDown') {
+            e.preventDefault();
+            setFocused(Math.min(focusedIndex + 1, rows.length - 1));
+          } else if (e.key === 'ArrowUp') {
+            e.preventDefault();
+            setFocused(Math.max(focusedIndex - 1, 0));
+          } else if (e.key === 'Enter') {
+            if ((e.metaKey || e.ctrlKey) && step.type === 'multi') {
+              e.preventDefault();
+              advanceStep();
+            } else if (focusedIndex >= 0) {
+              e.preventDefault();
+              const row = rows[focusedIndex];
+              // If the focused row is the SE row, open it instead of normal select
+              if (row && row.dataset.value === '__something_else__') {
+                if (!row.classList.contains('se-expanded')) {
+                  row.click();
+                }
+              } else {
+                handleRowClick(row, focusedIndex);
+              }
+            }
+          } else if (e.key === 'Escape') {
+            e.preventDefault();
+            dismissCard(false);
+          }
+        });
+
+        // Init: render group A, step 1
+        buildStep(0, 0);
+      })();
+
+    </script>
+
+  </body>
+</html>

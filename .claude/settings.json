@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(//c/Anshul/code/projects/shelter-mcp-server/**)",
+      "Read(//c/Anshul/code/projects/shelter-chat-api/app/api/**)",
+      "Read(//c/Anshul/code/projects/shelter-chat-api/app/agent/**)",
+      "Read(//c/Anshul/code/projects/shelter-chat-api/app/core/**)"
+    ]
+  }
+}

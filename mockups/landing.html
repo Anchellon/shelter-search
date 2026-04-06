@@ -1,0 +1,548 @@
+ <!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>Navigator</title>
+    <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600;700&display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet" />
+    <style>
+      *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+      :root {
+        --brand: #276ce5;
+        --brand-dark: #0856ad;
+        --brand-light: #b3d4fc;
+        --brand-verylight: #f1f5fa;
+        --sidebar-bg: #fff;
+        --grey1: #f9f9f9;
+        --grey2: #f3f5f7;
+        --grey4: #cecece;
+        --grey5: #888;
+        --grey6: #666;
+        --grey9: #242c2e;
+        --white: #fff;
+        --shadow-sm: 0px 2px 4px rgba(0,0,0,0.08);
+      }
+
+      body {
+        font-family: "Open Sans", "Helvetica Neue", Arial, sans-serif;
+        font-size: 16px;
+        color: var(--grey9);
+        background: var(--white);
+        display: flex;
+        height: 100vh;
+        overflow: hidden;
+      }
+
+      .material-symbols-outlined {
+        font-variation-settings: "FILL" 0, "wght" 300, "GRAD" 0, "opsz" 24;
+        vertical-align: middle;
+      }
+
+      /* ── Sidebar ── */
+      .sidebar {
+        width: 260px;
+        height: 100vh;
+        background: var(--grey1);
+        border-right: 1px solid var(--grey2);
+        display: flex;
+        flex-direction: column;
+        flex-shrink: 0;
+        overflow: hidden;
+        transition: width 0.2s ease;
+      }
+
+      .sidebar.collapsed {
+        width: 0;
+      }
+
+      .sidebar-inner {
+        width: 260px;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        padding: 12px 0 12px;
+      }
+
+      /* Top row: title + toggle button */
+      .sidebar-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 4px 12px 12px;
+        flex-shrink: 0;
+      }
+
+      .sidebar-title {
+        font-size: 17px;
+        font-weight: 700;
+        color: var(--grey9);
+        letter-spacing: -0.3px;
+      }
+
+      .icon-btn {
+        width: 30px;
+        height: 30px;
+        border-radius: 6px;
+        border: none;
+        background: transparent;
+        color: var(--grey5);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: background 0.12s, color 0.12s;
+        flex-shrink: 0;
+      }
+
+      .icon-btn:hover { background: var(--grey2); color: var(--grey9); }
+      .icon-btn .material-symbols-outlined { font-size: 20px; }
+
+      .icon-btn-new {
+        background: var(--brand);
+        color: var(--white);
+        border-radius: 50%;
+        border: none;
+      }
+
+      .icon-btn-new:hover { background: var(--brand-dark); color: var(--white); }
+
+      /* Nav items */
+      .sidebar-nav {
+        padding: 0 8px 8px;
+        flex-shrink: 0;
+      }
+
+      .nav-item {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 8px 10px;
+        border-radius: 3px;
+        cursor: pointer;
+        text-decoration: none;
+        color: var(--grey9);
+        font-size: 14px;
+        font-weight: 400;
+        transition: background 0.12s;
+        white-space: nowrap;
+      }
+
+      .nav-item:hover { background: var(--grey2); }
+      .nav-item .material-symbols-outlined { font-size: 18px; color: var(--grey5); }
+
+      .nav-item-new {
+        font-weight: 600;
+        color: var(--brand);
+      }
+
+      .nav-item-new .new-icon {
+        width: 22px;
+        height: 22px;
+        border-radius: 50%;
+        background: var(--brand);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+      }
+
+      .nav-item-new .new-icon .material-symbols-outlined { font-size: 14px; color: var(--white); }
+
+      .sidebar-divider {
+        height: 1px;
+        background: var(--grey2);
+        margin: 4px 12px 8px;
+      }
+
+      /* Recents */
+      .sidebar-recents {
+        flex: 1;
+        overflow-y: auto;
+        padding: 0 8px;
+      }
+
+      .sidebar-recents::-webkit-scrollbar { width: 4px; }
+      .sidebar-recents::-webkit-scrollbar-thumb { background: var(--grey4); border-radius: 4px; }
+
+      .recents-label {
+        font-size: 11px;
+        font-weight: 600;
+        color: var(--grey5);
+        padding: 4px 10px 6px;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+      }
+
+      .recent-item {
+        display: block;
+        padding: 6px 10px;
+        border-radius: 3px;
+        cursor: pointer;
+        text-decoration: none;
+        color: var(--grey6);
+        font-size: 13px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        transition: background 0.12s, color 0.12s;
+      }
+
+      .recent-item:hover { background: var(--grey2); color: var(--grey9); }
+
+      /* Bottom user row */
+      .sidebar-footer {
+        padding: 12px 12px 8px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex-shrink: 0;
+        border-top: 1px solid var(--grey2);
+        margin-top: 8px;
+      }
+
+      .user-avatar {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        background: var(--brand);
+        color: var(--white);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 13px;
+        font-weight: 700;
+        flex-shrink: 0;
+      }
+
+      .user-info { flex: 1; overflow: hidden; }
+      .user-name { font-size: 13px; font-weight: 600; color: var(--grey9); }
+      .user-plan { font-size: 11px; color: var(--grey5); }
+
+      /* ── Floating toggle when sidebar is closed ── */
+      .floating-toggle {
+        position: fixed;
+        top: 12px;
+        left: 12px;
+        display: none;
+        z-index: 100;
+      }
+
+      .sidebar.collapsed ~ .floating-toggle,
+      body.sidebar-collapsed .floating-toggle {
+        display: flex;
+      }
+
+      /* ── Main ── */
+      .main {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 40px 24px;
+        overflow-y: auto;
+        background: var(--grey1);
+        position: relative;
+      }
+
+      .floating-btns {
+        display: none;
+        width: 52px;
+        height: 100vh;
+        background: var(--grey1);
+        border-right: 1px solid var(--grey2);
+        flex-direction: column;
+        align-items: center;
+        padding: 12px 0;
+        gap: 4px;
+        flex-shrink: 0;
+      }
+
+      .floating-btns.visible {
+        display: flex;
+      }
+
+      .landing-center {
+        width: 100%;
+        max-width: 620px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 28px;
+      }
+
+      .landing-hero {
+        text-align: center;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 10px;
+      }
+
+      .landing-logo {
+        width: 48px;
+        height: 48px;
+        background: var(--brand);
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 4px;
+      }
+
+      .landing-title {
+        font-size: 24px;
+        font-weight: 700;
+        color: var(--grey9);
+        line-height: 1.2;
+      }
+
+      .landing-subtitle {
+        font-size: 14px;
+        color: var(--grey5);
+        max-width: 400px;
+        line-height: 1.65;
+      }
+
+      .search-box {
+        width: 100%;
+        background: var(--white);
+        border: 1px solid var(--grey4);
+        border-radius: 8px;
+        box-shadow: var(--shadow-sm);
+        padding: 14px 16px;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        transition: border-color 0.15s, box-shadow 0.15s;
+      }
+
+      .search-box:focus-within {
+        border-color: var(--brand-light);
+        box-shadow: 0 0 0 3px rgba(39,108,229,0.1);
+      }
+
+      .search-textarea {
+        width: 100%;
+        border: none;
+        outline: none;
+        font-family: inherit;
+        font-size: 14px;
+        color: var(--grey9);
+        resize: none;
+        background: transparent;
+        line-height: 1.6;
+        min-height: 50px;
+      }
+
+      .search-textarea::placeholder { color: #bbb; }
+
+      .search-footer { display: flex; justify-content: flex-end; }
+
+      .search-submit {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        padding: 8px 16px;
+        background: var(--brand);
+        color: var(--white);
+        border: none;
+        border-radius: 6px;
+        font-size: 13px;
+        font-weight: 600;
+        font-family: inherit;
+        cursor: pointer;
+        transition: background 0.15s;
+      }
+
+      .search-submit:hover { background: var(--brand-dark); }
+      .search-submit .material-symbols-outlined { font-size: 16px; }
+
+      .prompts-label {
+        font-size: 11px;
+        font-weight: 700;
+        color: var(--grey5);
+        text-transform: uppercase;
+        letter-spacing: 0.07em;
+        align-self: flex-start;
+      }
+
+      .prompts-grid {
+        width: 100%;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+      }
+
+      .prompt-chip {
+        background: var(--white);
+        border: 1px solid var(--grey2);
+        border-radius: 3px;
+        padding: 11px 13px;
+        font-size: 12px;
+        color: var(--grey6);
+        cursor: pointer;
+        text-align: left;
+        font-family: inherit;
+        line-height: 1.5;
+        transition: border-color 0.12s, background 0.12s, color 0.12s;
+        box-shadow: var(--shadow-sm);
+      }
+
+      .prompt-chip:hover {
+        border-color: var(--brand-light);
+        background: var(--brand-verylight);
+        color: var(--brand-dark);
+      }
+
+      .prompt-chip-label {
+        display: block;
+        font-size: 10px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: var(--brand);
+        margin-bottom: 3px;
+      }
+    </style>
+  </head>
+  <body>
+
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-inner">
+
+        <!-- Header: title + toggle -->
+        <div class="sidebar-header">
+          <span class="sidebar-title">Navigator</span>
+          <button class="icon-btn" onclick="toggleSidebar()" title="Close sidebar">
+            <span class="material-symbols-outlined">menu</span>
+          </button>
+        </div>
+
+        <!-- Nav items -->
+        <div class="sidebar-nav">
+          <a class="nav-item nav-item-new" href="#">
+            <span class="new-icon"><span class="material-symbols-outlined">add</span></span>
+            New Search
+          </a>
+          <a class="nav-item" href="#" id="nav-collections">
+            <span class="material-symbols-outlined">bookmark</span>
+            Collections
+          </a>
+        </div>
+
+        <div class="sidebar-divider"></div>
+
+        <!-- Recents -->
+        <div class="sidebar-recents">
+          <div class="recents-label">Recents</div>
+          <a class="recent-item" href="#">Shelter near Larkin St for 3 groups</a>
+          <a class="recent-item" href="#">HIV resources Tenderloin — youth</a>
+          <a class="recent-item" href="#">Urgent medical care SoMa adult male</a>
+          <a class="recent-item" href="#">Women's shelter Mission District</a>
+          <a class="recent-item" href="#">Food pantry + case management SoMa</a>
+          <a class="recent-item" href="#">Family resources near Civic Center</a>
+          <a class="recent-item" href="#">Mental health services Tenderloin</a>
+        </div>
+
+        <!-- Footer -->
+        <div class="sidebar-footer">
+          <div class="user-avatar">M</div>
+          <div class="user-info">
+            <div class="user-name">Marcus T.</div>
+            <div class="user-plan">Case Worker</div>
+          </div>
+        </div>
+
+      </div>
+    </aside>
+
+    <!-- Collapsed icon strip -->
+    <div class="floating-btns" id="floatingBtns">
+      <button class="icon-btn" onclick="toggleSidebar()" title="Open sidebar">
+        <span class="material-symbols-outlined">menu</span>
+      </button>
+      <button class="icon-btn icon-btn-new" title="New search">
+        <span class="material-symbols-outlined">add</span>
+      </button>
+      <button class="icon-btn" onclick="openSidebarTo('collections')" title="Collections">
+        <span class="material-symbols-outlined">bookmark</span>
+      </button>
+    </div>
+
+    <!-- Main -->
+    <main class="main" id="main">
+
+      <div class="landing-center">
+
+        <div class="landing-hero">
+          <div class="landing-logo">
+            <svg width="26" height="26" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path fill-rule="evenodd" clip-rule="evenodd" d="M8.91279 0C11.2945 0 13.5333 0.935852 15.2173 2.63564C16.9016 4.33568 17.829 6.59608 17.829 8.99986C17.829 11.4039 16.9016 13.664 15.2173 15.3638C13.5331 17.0639 11.2937 18 8.91201 18C6.53032 18 4.29147 17.0641 2.60723 15.3641C-0.869294 11.8549 -0.869034 6.14507 2.60775 2.63617C4.292 0.936111 6.53111 0 8.91279 0ZM13.3094 5.68216C14.7634 7.64337 14.7634 10.3566 13.3094 12.3179L14.6326 13.6532C15.6861 12.339 16.2596 10.7139 16.2596 8.99988C16.2596 7.28557 15.6861 5.66077 14.6329 4.34625L13.3094 5.68216ZM6.13634 11.8024C4.60539 10.2571 4.60539 7.74292 6.13634 6.1976C6.878 5.44925 7.86401 5.03677 8.91253 5.03677C9.96106 5.03677 10.9471 5.44925 11.6887 6.1976C13.2197 7.74292 13.2197 10.2571 11.6887 11.8024C10.9471 12.5508 9.96106 12.9632 8.91253 12.9632C7.86401 12.9632 6.878 12.5508 6.13634 11.8024ZM12.1999 4.56174L13.5229 3.22635C12.2211 2.16296 10.6112 1.5844 8.91281 1.5844C7.2147 1.5844 5.60476 2.16322 4.30247 3.22662L5.62517 4.56174C6.56983 3.84586 7.71018 3.45293 8.91255 3.45293C10.1149 3.45293 11.2553 3.84586 12.1999 4.56174ZM3.19271 4.34677L4.51593 5.68242C3.06191 7.64363 3.06191 10.3569 4.51593 12.3181L3.19245 13.654C1.02868 10.9479 1.02868 7.05264 3.19271 4.34677ZM5.62515 13.4385L4.30219 14.7739C5.60448 15.8373 7.21391 16.4159 8.912 16.4159C10.6104 16.4159 12.2203 15.837 13.5226 14.7737L12.1999 13.4385C11.2552 14.1544 10.1149 14.5473 8.91253 14.5473C7.71017 14.5473 6.56983 14.1544 5.62515 13.4385Z" fill="white"/>
+            </svg>
+          </div>
+          <h1 class="landing-title">Find resources for people in need</h1>
+          <p class="landing-subtitle">Describe who you're helping, what they need, and where they are — our AI will find the best matched services.</p>
+        </div>
+
+        <div class="search-box">
+          <textarea
+            class="search-textarea"
+            placeholder="e.g. I have a group near Larkin Street — one needs shelter, another needs medical care..."
+            rows="3"
+          ></textarea>
+          <div class="search-footer">
+            <button class="search-submit">
+              <span class="material-symbols-outlined">send</span>
+              Search
+            </button>
+          </div>
+        </div>
+
+        <span class="prompts-label">Try an example</span>
+        <div class="prompts-grid">
+          <button class="prompt-chip">
+            <span class="prompt-chip-label">Shelter + Health</span>
+            Group near Larkin St — one needs shelter, another needs health resources
+          </button>
+          <button class="prompt-chip">
+            <span class="prompt-chip-label">Youth Services</span>
+            18–24 year old in the Tenderloin needing HIV resources and housing
+          </button>
+          <button class="prompt-chip">
+            <span class="prompt-chip-label">Urgent Care</span>
+            Adult male in SoMa needing urgent medical care tonight
+          </button>
+          <button class="prompt-chip">
+            <span class="prompt-chip-label">Family Support</span>
+            Family of 4 in the Mission needing shelter and food assistance
+          </button>
+        </div>
+
+      </div>
+    </main>
+
+    <script>
+      function toggleSidebar() {
+        const sidebar = document.getElementById('sidebar');
+        const floatingBtns = document.getElementById('floatingBtns');
+        const isCollapsed = sidebar.classList.toggle('collapsed');
+        floatingBtns.classList.toggle('visible', isCollapsed);
+      }
+
+      function openSidebarTo(section) {
+        const sidebar = document.getElementById('sidebar');
+        const floatingBtns = document.getElementById('floatingBtns');
+        sidebar.classList.remove('collapsed');
+        floatingBtns.classList.remove('visible');
+        // scroll the relevant nav item into view
+        const target = document.getElementById('nav-' + section);
+        if (target) target.scrollIntoView({ behavior: 'smooth' });
+      }
+    </script>
+
+  </body>
+</html>
