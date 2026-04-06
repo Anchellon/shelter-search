@@ -1,73 +1,117 @@
-# React + TypeScript + Vite
+# Navigator — SF Service Guide
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+An AI-powered resource finder for case workers and people helping individuals in crisis. Built for [ShelterTech](https://www.sheltertech.org/) / SF Service Guide.
 
-Currently, two official plugins are available:
+**Find. Connect. Help.**
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+---
 
-## React Compiler
+## What it does
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+Navigator lets case workers describe who they are helping in plain language. An AI agent identifies the relevant groups (e.g. a family needing shelter + an individual needing mental health support), collects any missing eligibility info through a structured intake flow, then returns matched services from the SF Service Guide database — grouped and ranked per need.
 
-## Expanding the ESLint configuration
+---
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+## Tech stack
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+| Layer | Choice |
+|---|---|
+| Framework | React 19 + TypeScript |
+| Build | Vite |
+| State | Redux Toolkit |
+| Routing | React Router v7 |
+| Styling | Tailwind CSS v3 |
+| Icons | Lucide React + Material Symbols |
+| Validation | Zod |
+| Backend | REST + Server-Sent Events (SSE) |
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+---
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+## Getting started
+
+### Prerequisites
+
+- Node.js 18+
+- A running instance of the Navigator backend API
+
+### Install
+
+```bash
+npm install
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+### Configure environment
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+Copy `.env.example` to `.env` and fill in your values:
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+cp .env.example .env
 ```
+
+```env
+VITE_API_URL=http://localhost:8000
+VITE_API_KEY=your-api-key-here
+```
+
+### Run
+
+```bash
+npm run dev
+```
+
+### Build
+
+```bash
+npm run build
+```
+
+---
+
+## Project structure
+
+```
+src/
+├── app/
+│   ├── providers/       # App-level React providers
+│   ├── router/          # Routes, AppRouter, ProtectedRoute
+│   └── store/           # Redux store + slices (chat, ui, user)
+├── features/
+│   ├── landing/         # Landing page with search input + prompt chips
+│   └── chat/            # Chat pane, results panel, intake card, group cards
+├── services/
+│   └── api.ts           # SSE client for /chat, /chat/resume, /services/batch
+└── shared/
+    └── components/      # Sidebar, ErrorBoundary, logos, shared UI
+```
+
+---
+
+## How the agent flow works
+
+1. User describes a need in plain text
+2. Backend agent classifies one or more **groups** (Who needs what, where)
+3. For any group missing eligibility info, the UI presents a **structured intake card** — a stepped, per-group questionnaire
+4. Once all groups are complete, the agent searches the SF Service Guide and streams back matched services
+5. Results appear in the right panel, organized by group, with an AI rationale summary
+
+Eligibility dimensions the agent can ask about: Age, Housing Status, Gender, Family Status, Employment, Financial Status, Health Concerns, Ethnicity, Immigration Status, and more.
+
+---
+
+## Mockups
+
+Static HTML/CSS/JS mockups live in `mockups/` and can be opened directly in a browser — no build step needed.
+
+| File | Screen |
+|---|---|
+| `mockups/landing.html` | Landing / search home |
+| `mockups/chat.html` | Chat + intake card + results panel |
+
+---
+
+## Environment variables
+
+| Variable | Description |
+|---|---|
+| `VITE_API_URL` | Base URL of the Navigator backend API |
+| `VITE_API_KEY` | API key sent as `X-API-Key` header |
