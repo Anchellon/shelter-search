@@ -6,6 +6,7 @@ export interface UIState {
   activeGroupId: number | null;
   resultsPanelOpen: boolean;
   resultsPanelExpanded: boolean;
+  authModalOpen: boolean;
 }
 
 const initialState: UIState = {
@@ -13,6 +14,7 @@ const initialState: UIState = {
   activeGroupId: null,
   resultsPanelOpen: false,
   resultsPanelExpanded: false,
+  authModalOpen: false,
 };
 
 const uiSlice = createSlice({
@@ -38,6 +40,12 @@ const uiSlice = createSlice({
     toggleResultsPanelExpanded(state) {
       state.resultsPanelExpanded = !state.resultsPanelExpanded;
     },
+    openAuthModal(state) {
+      state.authModalOpen = true;
+    },
+    closeAuthModal(state) {
+      state.authModalOpen = false;
+    },
   },
 });
 
@@ -48,6 +56,8 @@ export const {
   openResultsPanel,
   closeResultsPanel,
   toggleResultsPanelExpanded,
+  openAuthModal,
+  closeAuthModal,
 } = uiSlice.actions;
 
 export default uiSlice.reducer;

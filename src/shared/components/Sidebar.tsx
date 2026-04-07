@@ -1,32 +1,57 @@
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useAuth0 } from "@auth0/auth0-react";
 import { useAppDispatch, useAppSelector } from "@/app/store/hooks";
-import { setSidebarOpen, toggleSidebar } from "@/app/store/slices/uiSlice";
+import {
+  setSidebarOpen,
+  toggleSidebar,
+  setActiveGroupId,
+  openAuthModal,
+} from "@/app/store/slices/uiSlice";
+import { loadConversation } from "@/app/store/slices/chatSlice";
+import { setConversations, setConversationsLoading } from "@/app/store/slices/conversationsSlice";
+import { listConversations, getConversation } from "@/services/api";
 import { ROUTES } from "@/app/router/routes";
 import MSO from "./MSO";
 import ShelterTechLogo from "./ShelterTechLogo";
 
-// TODO: replace with real conversation history from the store
-const STATIC_RECENTS = [
-  "Shelter near Larkin St for 3 groups",
-  "HIV resources Tenderloin — youth",
-  "Urgent medical care SoMa adult male",
-  "Women's shelter Mission District",
-  "Food pantry + case management SoMa",
-  "Family resources near Civic Center",
-  "Mental health services Tenderloin",
-];
-
 export default function Sidebar() {
   const dispatch = useAppDispatch();
+  const { isAuthenticated, user } = useAuth0();
   const sidebarOpen = useAppSelector((s) => s.ui.sidebarOpen);
-  const user = useAppSelector((s) => s.user.user);
+  const { conversations, loading } = useAppSelector((s) => s.conversations);
   const navigate = useNavigate();
+  const [loadError, setLoadError] = useState<string | null>(null);
 
-  const avatarInitial = user?.avatarInitial ?? "M";
-  const userName = user?.name ?? "Marcus T.";
+  // Fetch (or re-fetch) conversations whenever the user logs in
+  useEffect(() => {
+    if (!isAuthenticated) return;
+    dispatch(setConversationsLoading(true));
+    listConversations()
+      .then((data) => dispatch(setConversations(data)))
+      .catch(() => {})
+      .finally(() => dispatch(setConversationsLoading(false)));
+  }, [isAuthenticated, dispatch]);
+
+  async function handleConversationClick(id: string) {
+    setLoadError(null);
+    try {
+      const snapshot = await getConversation(id);
+      dispatch(loadConversation(snapshot));
+      if (snapshot.groups.length > 0) {
+        dispatch(setActiveGroupId(snapshot.groups[0].group_id));
+      }
+      navigate(ROUTES.CHAT);
+    } catch {
+      setLoadError("Failed to load conversation. Please try again.");
+    }
+  }
 
   const iconBtn =
     "w-[30px] h-[30px] rounded flex items-center justify-center text-grey-5 hover:bg-grey-2 hover:text-grey-9 transition-colors flex-shrink-0";
+
+  const avatarInitial = user?.name ? user.name[0].toUpperCase() : "?";
+  const userName = user?.name ?? user?.email ?? "Account";
 
   return (
     <>
@@ -38,12 +63,11 @@ export default function Sidebar() {
         />
       )}
 
-      {/* Sidebar — fixed on mobile/tablet, relative on desktop */}
+      {/* Sidebar */}
       <aside
         className={[
           "h-screen bg-grey-1 border-r border-grey-2 flex-shrink-0 overflow-hidden z-50",
           "transition-[width,transform] duration-200 ease-in-out",
-          // mobile/tablet: fixed overlay, slides in/out
           "fixed lg:relative",
           sidebarOpen
             ? "w-[260px] translate-x-0"
@@ -95,30 +119,65 @@ export default function Sidebar() {
             <div className="text-[11px] font-semibold text-grey-5 uppercase tracking-[0.06em] px-2.5 py-1.5">
               Recents
             </div>
-            {STATIC_RECENTS.map((label) => (
+            {loadError && (
+              <div className="px-2.5 py-1.5 text-[12px] text-red-500">{loadError}</div>
+            )}
+            {!isAuthenticated && (
+              <div className="px-2.5 py-1.5 text-[13px] text-grey-5">
+                Sign in to see recent searches
+              </div>
+            )}
+            {isAuthenticated && loading && (
+              <div className="px-2.5 py-1.5 text-[13px] text-grey-5">Loading...</div>
+            )}
+            {isAuthenticated && !loading && conversations.length === 0 && (
+              <div className="px-2.5 py-1.5 text-[13px] text-grey-5">No recent searches</div>
+            )}
+            {isAuthenticated && conversations.map((conv) => (
               <button
-                key={label}
+                key={conv.id}
+                onClick={() => handleConversationClick(conv.id)}
                 className="w-full text-left px-2.5 py-1.5 rounded-sm text-grey-6 text-[13px] truncate hover:bg-grey-2 hover:text-grey-9 transition-colors"
               >
-                {label}
+                {conv.title}
               </button>
             ))}
           </div>
 
           {/* Footer */}
-          <div className="px-3 pt-3 mt-2 border-t border-grey-2 flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-full bg-brand text-white flex items-center justify-center text-[13px] font-bold flex-shrink-0">
-              {avatarInitial}
-            </div>
-            <div className="flex-1 overflow-hidden">
-              <div className="text-[13px] font-semibold text-grey-9 truncate">{userName}</div>
-              <div className="text-[11px] text-grey-5">Case Worker</div>
-            </div>
+          <div className="px-3 pt-3 mt-2 border-t border-grey-2">
+            {isAuthenticated ? (
+              <div className="flex items-center gap-2.5">
+                {user?.picture ? (
+                  <img
+                    src={user.picture}
+                    alt={userName}
+                    className="w-8 h-8 rounded-full flex-shrink-0 object-cover"
+                  />
+                ) : (
+                  <div className="w-8 h-8 rounded-full bg-brand text-white flex items-center justify-center text-[13px] font-bold flex-shrink-0">
+                    {avatarInitial}
+                  </div>
+                )}
+                <div className="flex-1 overflow-hidden">
+                  <div className="text-[13px] font-semibold text-grey-9 truncate">{userName}</div>
+                  <div className="text-[11px] text-grey-5">Case Worker</div>
+                </div>
+              </div>
+            ) : (
+              <button
+                onClick={() => dispatch(openAuthModal())}
+                className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-sm text-brand text-[13px] font-semibold hover:bg-grey-2 transition-colors"
+              >
+                <MSO icon="login" size={18} className="text-brand" />
+                Sign In / Sign Up
+              </button>
+            )}
           </div>
         </div>
       </aside>
 
-      {/* Collapsed icon strip — desktop only, shown when sidebar is closed */}
+      {/* Collapsed icon strip — desktop only */}
       <div
         className={[
           "hidden lg:flex flex-col items-center py-3 gap-1 flex-shrink-0",
@@ -140,6 +199,16 @@ export default function Sidebar() {
         <button title="Collections" aria-label="Collections" className={iconBtn}>
           <MSO icon="bookmark" />
         </button>
+        {!isAuthenticated && (
+          <button
+            onClick={() => dispatch(openAuthModal())}
+            title="Sign In"
+            aria-label="Sign In"
+            className={iconBtn}
+          >
+            <MSO icon="login" />
+          </button>
+        )}
       </div>
     </>
   );

@@ -58,6 +58,15 @@ export interface Message {
   groups?: Group[];   // only for type === "group-cards"
 }
 
+// ---------- Conversation snapshot (from GET /conversations/{id}) ----------
+
+export interface ConversationSnapshot {
+  id: string;
+  messages: Message[];
+  groups: Group[];
+  formatted: Record<string, { rationale: string; service_ids: number[] }>;
+}
+
 // ---------- Per-group results with pagination ----------
 
 export interface GroupResults {
@@ -115,16 +124,21 @@ const chatSlice = createSlice({
     appendPendingDelta(state, action: PayloadAction<string>) {
       state.pendingText += action.payload;
     },
-    commitPendingMessage(state) {
-      if (state.pendingText.trim()) {
-        state.messages.push({
-          id: `ai_${Date.now()}`,
-          role: "assistant",
-          type: "text",
-          content: state.pendingText,
-        });
-      }
-      state.pendingText = "";
+    commitPendingMessage: {
+      reducer(state, action: PayloadAction<{ id: string }>) {
+        if (state.pendingText.trim()) {
+          state.messages.push({
+            id: action.payload.id,
+            role: "assistant",
+            type: "text",
+            content: state.pendingText,
+          });
+        }
+        state.pendingText = "";
+      },
+      prepare() {
+        return { payload: { id: `ai_${Date.now()}` } };
+      },
     },
     streamingEnd(state) {
       state.isStreaming = false;
@@ -137,28 +151,38 @@ const chatSlice = createSlice({
     },
 
     // --- User messages ---
-    addUserMessage(state, action: PayloadAction<string>) {
-      state.messages.push({
-        id: `user_${Date.now()}`,
-        role: "user",
-        type: "text",
-        content: action.payload,
-      });
+    addUserMessage: {
+      reducer(state, action: PayloadAction<{ id: string; content: string }>) {
+        state.messages.push({
+          id: action.payload.id,
+          role: "user",
+          type: "text",
+          content: action.payload.content,
+        });
+      },
+      prepare(content: string) {
+        return { payload: { id: `user_${Date.now()}`, content } };
+      },
     },
 
     // --- Groups ---
     setGroups(state, action: PayloadAction<Group[]>) {
       state.groups = action.payload;
     },
-    commitGroupCards(state) {
-      if (state.groups.length === 0) return;
-      state.messages.push({
-        id: `groups_${Date.now()}`,
-        role: "assistant",
-        type: "group-cards",
-        content: "",
-        groups: state.groups,
-      });
+    commitGroupCards: {
+      reducer(state, action: PayloadAction<{ id: string }>) {
+        if (state.groups.length === 0) return;
+        state.messages.push({
+          id: action.payload.id,
+          role: "assistant",
+          type: "group-cards",
+          content: "",
+          groups: state.groups,
+        });
+      },
+      prepare() {
+        return { payload: { id: `groups_${Date.now()}` } };
+      },
     },
 
     // --- Intake ---
@@ -191,6 +215,59 @@ const chatSlice = createSlice({
       if (gr) gr.currentPage = action.payload.page;
     },
 
+    // --- Load saved conversation ---
+    loadConversation(state, action: PayloadAction<ConversationSnapshot>) {
+      const { id, messages, groups, formatted } = action.payload;
+      state.conversationId = id;
+      state.groups = groups;
+
+      // The backend only stores text messages. Synthesize the group-cards message
+      // (normally created by commitGroupCards during a live stream) and inject it
+      // after the last assistant message that precedes any subsequent user messages —
+      // matching where it would have appeared in the original live conversation.
+      if (groups.length > 0) {
+        // Find the last assistant message index before the first user message that
+        // follows an assistant message (i.e. a follow-up turn). This places the card
+        // after the initial search response even in multi-turn conversations.
+        let insertAt = messages.length;
+        for (let i = messages.length - 1; i >= 0; i--) {
+          if (messages[i].role === "assistant") {
+            insertAt = i + 1;
+            break;
+          }
+        }
+        const groupCardsMsg: Message = {
+          id: "groups_restored",
+          role: "assistant",
+          type: "group-cards",
+          content: "",
+          groups,
+        };
+        state.messages = [
+          ...messages.slice(0, insertAt),
+          groupCardsMsg,
+          ...messages.slice(insertAt),
+        ];
+      } else {
+        state.messages = messages;
+      }
+
+      state.groupResults = {};
+      for (const [gid, data] of Object.entries(formatted)) {
+        state.groupResults[gid] = {
+          rationale: data.rationale,
+          serviceIds: data.service_ids,
+          currentPage: 1,
+          pageSize: 10,
+        };
+      }
+      state.servicesCache = {};
+      state.intakeRequest = null;
+      state.isStreaming = false;
+      state.pendingText = "";
+      state.error = null;
+    },
+
     // --- Services cache ---
     mergeServicesCache(state, action: PayloadAction<Service[]>) {
       for (const svc of action.payload) {
@@ -203,6 +280,7 @@ const chatSlice = createSlice({
 export const {
   setConversationId,
   resetConversation,
+  loadConversation,
   streamingBegin,
   appendPendingDelta,
   commitPendingMessage,

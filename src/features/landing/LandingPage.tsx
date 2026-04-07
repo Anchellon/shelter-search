@@ -1,5 +1,8 @@
 import { useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
+import { useAuth0 } from "@auth0/auth0-react";
+import { useAppDispatch } from "@/app/store/hooks";
+import { openAuthModal } from "@/app/store/slices/uiSlice";
 import Sidebar from "@/shared/components/Sidebar";
 import MobileHeader from "@/shared/components/MobileHeader";
 import ShelterTechLogo from "@/shared/components/ShelterTechLogo";
@@ -29,10 +32,23 @@ export default function LandingPage() {
   const [query, setQuery] = useState("");
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const navigate = useNavigate();
+  const dispatch = useAppDispatch();
+  const { isAuthenticated } = useAuth0();
+
+  function handleFocus() {
+    if (!isAuthenticated) {
+      textareaRef.current?.blur();
+      dispatch(openAuthModal());
+    }
+  }
 
   function handleSubmit() {
     const trimmed = query.trim();
     if (!trimmed) return;
+    if (!isAuthenticated) {
+      dispatch(openAuthModal());
+      return;
+    }
     navigate(ROUTES.CHAT, { state: { initialMessage: trimmed } });
   }
 
@@ -77,6 +93,7 @@ export default function LandingPage() {
               ref={textareaRef}
               value={query}
               onChange={(e) => setQuery(e.target.value)}
+              onFocus={handleFocus}
               onKeyDown={handleKeyDown}
               placeholder="e.g. I have a group near Larkin Street — one needs shelter, another needs medical care..."
               rows={3}

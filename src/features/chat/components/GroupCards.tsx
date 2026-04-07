@@ -1,5 +1,5 @@
 import { useAppDispatch, useAppSelector } from "@/app/store/hooks";
-import { setActiveGroupId } from "@/app/store/slices/uiSlice";
+import { setActiveGroupId, openResultsPanel } from "@/app/store/slices/uiSlice";
 import { groupLabel } from "@/shared/utils/groupLabel";
 import type { Group } from "@/app/store/slices/chatSlice";
 
@@ -17,18 +17,22 @@ interface Props {
 export default function GroupCards({ groups }: Props) {
   const dispatch = useAppDispatch();
   const activeGroupId = useAppSelector((s) => s.ui.activeGroupId);
+  const resultsPanelOpen = useAppSelector((s) => s.ui.resultsPanelOpen);
 
   return (
     <div className="flex gap-2.5 flex-wrap" role="group" aria-label="Identified groups">
       {groups.map((group, i) => {
         const colors = GROUP_COLORS[i % GROUP_COLORS.length];
-        const isActive = activeGroupId === group.group_id;
+        const isActive = resultsPanelOpen && activeGroupId === group.group_id;
         const label = groupLabel(group.group_id);
 
         return (
           <button
             key={group.group_id}
-            onClick={() => dispatch(setActiveGroupId(group.group_id))}
+            onClick={() => {
+              dispatch(setActiveGroupId(group.group_id));
+              dispatch(openResultsPanel());
+            }}
             aria-pressed={isActive}
             aria-label={`Group ${label}: ${group.what}, ${group.where}`}
             className={[

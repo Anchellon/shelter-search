@@ -5,7 +5,7 @@ export interface UserProfile {
   id: string;
   name: string;
   email: string;
-  avatarInitial: string;
+  picture: string | null;
 }
 
 export interface UserState {
