@@ -223,16 +223,18 @@ const chatSlice = createSlice({
 
       // The backend only stores text messages. Synthesize the group-cards message
       // (normally created by commitGroupCards during a live stream) and inject it
-      // after the last assistant message that precedes any subsequent user messages —
-      // matching where it would have appeared in the original live conversation.
+      // right after the first assistant run — i.e. immediately before the first
+      // follow-up user message (or at the end if there are no follow-up turns).
       if (groups.length > 0) {
-        // Find the last assistant message index before the first user message that
-        // follows an assistant message (i.e. a follow-up turn). This places the card
-        // after the initial search response even in multi-turn conversations.
+        // Walk forward: once we've seen at least one assistant message, the next
+        // user message marks the boundary. Insert the card just before it.
         let insertAt = messages.length;
-        for (let i = messages.length - 1; i >= 0; i--) {
+        let seenAssistant = false;
+        for (let i = 0; i < messages.length; i++) {
           if (messages[i].role === "assistant") {
-            insertAt = i + 1;
+            seenAssistant = true;
+          } else if (seenAssistant && messages[i].role === "user") {
+            insertAt = i;
             break;
           }
         }

@@ -1,6 +1,7 @@
 import type { Service, Message, Group, ConversationSnapshot } from "@/app/store/slices/chatSlice";
+import type { ConversationSummary } from "@/app/store/slices/conversationsSlice";
 
-export type { ConversationSnapshot };
+export type { ConversationSnapshot, ConversationSummary };
 
 const BASE_URL = import.meta.env.VITE_API_URL ?? "http://localhost:8000/api/v1";
 
@@ -180,11 +181,6 @@ export async function cancelResume(conversationId: string): Promise<void> {
 }
 
 // ---------- Conversations ----------
-
-export interface ConversationSummary {
-  id: string;
-  title: string;
-}
 
 export async function listConversations(): Promise<ConversationSummary[]> {
   const res = await fetch(`${BASE_URL}/conversations`, {

@@ -89,6 +89,8 @@ export function useChat() {
 
   const processStream = useCallback(
     async (generator: AsyncGenerator<SSEEvent>) => {
+      let streamEnded = false;
+
       for await (const event of generator) {
         switch (event.type) {
           case "__conversation_id":
@@ -151,17 +153,21 @@ export function useChat() {
             // Pure chat turn (no search) — commit buffered text and end streaming
             dispatch(commitPendingMessage());
             dispatch(streamingEnd());
+            streamEnded = true;
             break;
 
           case "error":
             dispatch(streamError(event.errorText));
+            streamEnded = true;
             break;
         }
       }
 
-      // Cleanup: if stream ended without a finish/error event, flush and stop
-      dispatch(commitPendingMessage());
-      dispatch(streamingEnd());
+      // Cleanup: if the stream closed without a finish/error event, flush and stop
+      if (!streamEnded) {
+        dispatch(commitPendingMessage());
+        dispatch(streamingEnd());
+      }
     },
     [dispatch, fetchServicesPage]
   );
