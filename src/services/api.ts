@@ -28,9 +28,9 @@ export type SSEEvent =
   | { type: "text-end"; id: string }
   | { type: "tool-start"; tool: string; status: string }
   | { type: "tool-end"; tool: string }
-  | { type: "groups_identified"; groups: unknown[] }
   | { type: "intake_request"; group_id: number; group_label: string; steps: unknown[] }
-  | { type: "format_complete"; formatted: Record<string, { rationale: string; service_ids: number[] }> }
+  | { type: "groups_identified"; groups: unknown[] }
+  | { type: "format_complete"; formatted: Record<string, { rationale: string; service_ids: number[] }>; groups?: unknown[]; referral_id?: string }
   | { type: "finish"; finishReason: string }
   | { type: "error"; errorText: string };
 
@@ -178,6 +178,76 @@ export async function cancelResume(conversationId: string): Promise<void> {
   });
   // Consume the body to free the connection
   if (res.body) await res.body.cancel();
+}
+
+// ---------- Referrals ----------
+
+export interface ReferralGroup extends Group {
+  rationale: string | null;
+  service_ids?: number[];    // present in detail responses
+  service_count?: number;    // present in list responses
+}
+
+export interface ReferralSummary {
+  id: string;
+  thread_id: string;
+  title: string;
+  saved: boolean;
+  groups: ReferralGroup[];
+  created_at: string;
+}
+
+export type ReferralDetail = ReferralSummary;
+
+export interface CreateReferralPayload {
+  thread_id: string;
+  title?: string;
+  groups: Group[];
+  formatted: Record<string, { rationale: string; service_ids: number[] }>;
+}
+
+export async function createReferral(payload: CreateReferralPayload): Promise<{ id: string; title: string; saved: boolean; created_at: string }> {
+  const res = await fetch(`${BASE_URL}/referrals`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...(await authHeaders()) },
+    body: JSON.stringify(payload),
+  });
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  return res.json();
+}
+
+export async function starReferral(id: string): Promise<{ id: string; saved: boolean }> {
+  const res = await fetch(`${BASE_URL}/referrals/${id}/save`, {
+    method: "PATCH",
+    headers: await authHeaders(),
+  });
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  return res.json();
+}
+
+export async function listReferrals(): Promise<ReferralSummary[]> {
+  const res = await fetch(`${BASE_URL}/referrals`, {
+    headers: await authHeaders(),
+  });
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  const data = await res.json();
+  return data.referrals;
+}
+
+export async function getReferral(id: string): Promise<ReferralDetail> {
+  const res = await fetch(`${BASE_URL}/referrals/${id}`, {
+    headers: await authHeaders(),
+  });
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  return res.json();
+}
+
+export async function deleteReferral(id: string): Promise<void> {
+  const res = await fetch(`${BASE_URL}/referrals/${id}`, {
+    method: "DELETE",
+    headers: await authHeaders(),
+  });
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
 }
 
 // ---------- Conversations ----------

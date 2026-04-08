@@ -4,6 +4,7 @@ import type { PayloadAction } from "@reduxjs/toolkit";
 export interface UIState {
   sidebarOpen: boolean;
   activeGroupId: number | null;
+  activeReferralId: string | null;
   resultsPanelOpen: boolean;
   resultsPanelExpanded: boolean;
   authModalOpen: boolean;
@@ -12,6 +13,7 @@ export interface UIState {
 const initialState: UIState = {
   sidebarOpen: false, // desktop opens via SidebarInit layout effect; default closed for mobile
   activeGroupId: null,
+  activeReferralId: null,
   resultsPanelOpen: false,
   resultsPanelExpanded: false,
   authModalOpen: false,
@@ -29,6 +31,9 @@ const uiSlice = createSlice({
     },
     setActiveGroupId(state, action: PayloadAction<number | null>) {
       state.activeGroupId = action.payload;
+    },
+    setActiveReferralId(state, action: PayloadAction<string | null>) {
+      state.activeReferralId = action.payload;
     },
     openResultsPanel(state) {
       state.resultsPanelOpen = true;
@@ -53,6 +58,7 @@ export const {
   toggleSidebar,
   setSidebarOpen,
   setActiveGroupId,
+  setActiveReferralId,
   openResultsPanel,
   closeResultsPanel,
   toggleResultsPanelExpanded,

@@ -1,12 +1,12 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth0 } from "@auth0/auth0-react";
 import { useAppDispatch, useAppSelector } from "@/app/store/hooks";
 import {
   setSidebarOpen,
   toggleSidebar,
-  setActiveGroupId,
   openAuthModal,
+  closeResultsPanel,
 } from "@/app/store/slices/uiSlice";
 import { loadConversation } from "@/app/store/slices/chatSlice";
 import { setConversations, setConversationsLoading } from "@/app/store/slices/conversationsSlice";
@@ -21,6 +21,7 @@ export default function Sidebar() {
   const sidebarOpen = useAppSelector((s) => s.ui.sidebarOpen);
   const { conversations, loading } = useAppSelector((s) => s.conversations);
   const navigate = useNavigate();
+  const location = useLocation();
   const [loadError, setLoadError] = useState<string | null>(null);
 
   // Fetch (or re-fetch) conversations whenever the user logs in
@@ -38,9 +39,7 @@ export default function Sidebar() {
     try {
       const snapshot = await getConversation(id);
       dispatch(loadConversation(snapshot));
-      if (snapshot.groups.length > 0) {
-        dispatch(setActiveGroupId(snapshot.groups[0].group_id));
-      }
+      dispatch(closeResultsPanel());
       navigate(ROUTES.CHAT);
     } catch {
       setLoadError("Failed to load conversation. Please try again.");
@@ -106,8 +105,15 @@ export default function Sidebar() {
               </span>
               New Search
             </button>
-            <button className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-sm text-grey-9 text-sm hover:bg-grey-2 transition-colors">
-              <MSO icon="bookmark" size={18} className="text-grey-5" />
+            <button
+              onClick={() => { navigate(ROUTES.COLLECTIONS); dispatch(setSidebarOpen(false)); }}
+              className={["w-full flex items-center gap-2.5 px-2.5 py-2 rounded-sm text-sm transition-colors",
+                location.pathname === ROUTES.COLLECTIONS
+                  ? "bg-brand-verylight text-brand font-semibold"
+                  : "text-grey-9 hover:bg-grey-2",
+              ].join(" ")}
+            >
+              <MSO icon="bookmark" size={18} className={location.pathname === ROUTES.COLLECTIONS ? "text-brand" : "text-grey-5"} />
               Collections
             </button>
           </div>
@@ -196,7 +202,7 @@ export default function Sidebar() {
         >
           <MSO icon="add" size={18} className="text-white" />
         </button>
-        <button title="Collections" aria-label="Collections" className={iconBtn}>
+        <button onClick={() => navigate(ROUTES.COLLECTIONS)} title="Collections" aria-label="Collections" className={iconBtn}>
           <MSO icon="bookmark" />
         </button>
         {!isAuthenticated && (

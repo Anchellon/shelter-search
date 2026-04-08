@@ -5,10 +5,11 @@ import {
   addUserMessage,
   appendPendingDelta,
   clearIntakeRequest,
-  commitGroupCards,
+  commitReferralMessage,
   commitPendingMessage,
   mergeServicesCache,
   setConversationId,
+  setCurrentReferral,
   setGroupPage,
   setGroupResults,
   setGroups,
@@ -18,26 +19,33 @@ import {
   streamingEnd,
 } from "@/app/store/slices/chatSlice";
 import type { Group, IntakeStep } from "@/app/store/slices/chatSlice";
-import { openAuthModal, openResultsPanel, setActiveGroupId } from "@/app/store/slices/uiSlice";
+import { openAuthModal, openResultsPanel, setActiveGroupId, setActiveReferralId } from "@/app/store/slices/uiSlice";
 import * as api from "@/services/api";
 import type { SSEEvent } from "@/services/api";
 
 const DEFAULT_PAGE_SIZE = 10;
 
 // Runtime validators for SSE payloads that arrive as unknown[]
-function parseGroups(raw: unknown[]): Group[] {
-  return raw.filter((g): g is Group => {
-    if (!g || typeof g !== "object") return false;
-    const x = g as Record<string, unknown>;
-    return (
-      typeof x.group_id === "number" &&
-      typeof x.what === "string" &&
-      typeof x.where === "string"
-    );
-  });
+function parseGroups(raw: unknown): Group[] {
+  if (!Array.isArray(raw)) return [];
+  return raw
+    .filter((g): boolean => {
+      if (!g || typeof g !== "object") return false;
+      const x = g as Record<string, unknown>;
+      return (
+        (typeof x.group_id === "number" || typeof x.group_id === "string") &&
+        typeof x.what === "string" &&
+        typeof x.where === "string"
+      );
+    })
+    .map((g) => {
+      const x = g as Record<string, unknown>;
+      return { ...x, group_id: Number(x.group_id) } as Group;
+    });
 }
 
-function parseSteps(raw: unknown[]): IntakeStep[] {
+function parseSteps(raw: unknown): IntakeStep[] {
+  if (!Array.isArray(raw)) return [];
   return raw.filter((s): s is IntakeStep => {
     if (!s || typeof s !== "object") return false;
     const x = s as Record<string, unknown>;
@@ -57,15 +65,16 @@ export function useChat() {
   const groupResults = useAppSelector((s) => s.chat.groupResults);
   const servicesCache = useAppSelector((s) => s.chat.servicesCache);
 
-  // Fetches a page of services for a group, only requesting IDs not already in cache.
+  // Fetches a page of services for a group key, only requesting IDs not already in cache.
+  // groupKey is a compound key: `${referralId}_${groupId}` (or legacy `${groupId}`).
   // Pass groupData when calling immediately after setGroupResults dispatch (closure would be stale).
   const fetchServicesPage = useCallback(
     async (
-      groupId: string,
+      groupKey: string,
       page: number,
       groupData?: { serviceIds: number[]; pageSize: number }
     ) => {
-      const gr = groupData ?? groupResults[groupId];
+      const gr = groupData ?? groupResults[groupKey];
       if (!gr) return;
 
       const { serviceIds, pageSize } = gr;
@@ -82,7 +91,7 @@ export function useChat() {
         }
       }
 
-      dispatch(setGroupPage({ groupId, page }));
+      dispatch(setGroupPage({ groupKey, page }));
     },
     [dispatch, groupResults, servicesCache]
   );
@@ -90,7 +99,6 @@ export function useChat() {
   const processStream = useCallback(
     async (generator: AsyncGenerator<SSEEvent>) => {
       let streamEnded = false;
-
       for await (const event of generator) {
         switch (event.type) {
           case "__conversation_id":
@@ -109,15 +117,6 @@ export function useChat() {
             // Don't commit yet — wait for finish or format_complete
             break;
 
-          case "groups_identified": {
-            const groups = parseGroups(event.groups);
-            dispatch(setGroups(groups));
-            if (groups.length > 0) {
-              dispatch(setActiveGroupId(groups[0].group_id));
-            }
-            break;
-          }
-
           case "intake_request":
             // Flush any buffered AI text before showing the intake card
             dispatch(commitPendingMessage());
@@ -130,21 +129,41 @@ export function useChat() {
             );
             break;
 
+          case "groups_identified": {
+            const groups = parseGroups(event.groups);
+            dispatch(setGroups(groups));
+            if (groups.length > 0) {
+              dispatch(setActiveGroupId(groups[0].group_id));
+            }
+            break;
+          }
+
           case "format_complete": {
-            // Flush buffered AI text + group cards, then reveal results together
+            const groups = parseGroups(event.groups);
+            if (groups.length > 0) {
+              dispatch(setGroups(groups));
+            }
             dispatch(commitPendingMessage());
-            dispatch(commitGroupCards());
-            dispatch(setGroupResults(event.formatted));
-            dispatch(openResultsPanel());
-            // Fetch the first page of the first group. Pass data directly from the event
-            // because groupResults in the closure is pre-dispatch (stale at this point).
-            const firstGroupId = Object.keys(event.formatted)[0];
-            if (firstGroupId) {
-              const first = event.formatted[firstGroupId];
-              fetchServicesPage(firstGroupId, 1, {
-                serviceIds: first.service_ids,
-                pageSize: DEFAULT_PAGE_SIZE,
-              });
+
+            const referralId = event.referral_id;
+            if (referralId) {
+              // Create a referral message keyed by referralId — results are stored
+              // under compound keys so multiple turns never collide.
+              dispatch(commitReferralMessage(referralId));
+              dispatch(setGroupResults({ formatted: event.formatted, referralId }));
+              dispatch(setCurrentReferral(referralId));
+
+              const firstGroupId = Object.keys(event.formatted)[0];
+              if (firstGroupId) {
+                const groupKey = `${referralId}_${firstGroupId}`;
+                dispatch(setActiveReferralId(referralId));
+                dispatch(setActiveGroupId(Number(firstGroupId)));
+                dispatch(openResultsPanel());
+                fetchServicesPage(groupKey, 1, {
+                  serviceIds: event.formatted[firstGroupId].service_ids,
+                  pageSize: DEFAULT_PAGE_SIZE,
+                });
+              }
             }
             break;
           }

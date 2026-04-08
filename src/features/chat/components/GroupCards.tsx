@@ -1,29 +1,35 @@
 import { useAppDispatch, useAppSelector } from "@/app/store/hooks";
-import { setActiveGroupId, openResultsPanel } from "@/app/store/slices/uiSlice";
+import { setActiveGroupId, setActiveReferralId, openResultsPanel } from "@/app/store/slices/uiSlice";
+import { setCurrentReferral } from "@/app/store/slices/chatSlice";
 import { groupLabel } from "@/shared/utils/groupLabel";
+import GroupTag, { TAG_VARIANTS } from "@/shared/components/GroupTag";
 import type { Group } from "@/app/store/slices/chatSlice";
 
-const GROUP_COLORS = [
-  { tag: "bg-brand-verylight text-brand", card: "border-brand bg-brand-verylight" },
-  { tag: "bg-success-bg text-success-text", card: "border-success-border bg-success-bg" },
-  { tag: "bg-danger-bg text-danger-text", card: "border-danger-border bg-danger-bg" },
-  { tag: "bg-warning-bg text-warning-text", card: "border-warning-border bg-warning-bg" },
+const CARD_ACTIVE_COLORS = [
+  "border-brand bg-brand-verylight",
+  "border-success-border bg-success-bg",
+  "border-danger-border bg-danger-bg",
+  "border-warning-border bg-warning-bg",
 ];
 
 interface Props {
   groups: Group[];
+  referralId?: string;
 }
 
-export default function GroupCards({ groups }: Props) {
+export default function GroupCards({ groups, referralId }: Props) {
   const dispatch = useAppDispatch();
   const activeGroupId = useAppSelector((s) => s.ui.activeGroupId);
+  const activeReferralId = useAppSelector((s) => s.ui.activeReferralId);
   const resultsPanelOpen = useAppSelector((s) => s.ui.resultsPanelOpen);
 
   return (
     <div className="flex gap-2.5 flex-wrap" role="group" aria-label="Identified groups">
       {groups.map((group, i) => {
-        const colors = GROUP_COLORS[i % GROUP_COLORS.length];
-        const isActive = resultsPanelOpen && activeGroupId === group.group_id;
+        const variant = TAG_VARIANTS[i % TAG_VARIANTS.length];
+        const isActive = resultsPanelOpen
+          && activeGroupId === group.group_id
+          && (referralId ? activeReferralId === referralId : !activeReferralId);
         const label = groupLabel(group.group_id);
 
         return (
@@ -31,22 +37,24 @@ export default function GroupCards({ groups }: Props) {
             key={group.group_id}
             onClick={() => {
               dispatch(setActiveGroupId(group.group_id));
+              dispatch(setActiveReferralId(referralId ?? null));
               dispatch(openResultsPanel());
+              if (referralId) dispatch(setCurrentReferral(referralId));
             }}
             aria-pressed={isActive}
             aria-label={`Group ${label}: ${group.what}, ${group.where}`}
             className={[
               "flex-1 min-w-[140px] max-w-[220px] p-3.5 rounded border-[1.5px] text-left transition-all",
               isActive
-                ? colors.card
+                ? CARD_ACTIVE_COLORS[i % CARD_ACTIVE_COLORS.length]
                 : "border-grey-2 bg-white hover:border-brand-light hover:shadow-card",
             ].join(" ")}
           >
-            <span
-              className={`inline-block text-[9px] font-bold uppercase tracking-[0.07em] px-2 py-0.5 rounded-full mb-2 ${colors.tag}`}
-            >
-              Group {label}
-            </span>
+            <GroupTag
+              tag={variant}
+              label={`Group ${label}`}
+              className="text-[9px] px-2 py-0.5 mb-2"
+            />
             <div className="text-[13px] font-bold text-grey-9 leading-tight">{group.what}</div>
             <div className="text-[11px] text-grey-5 mt-1">{group.where}</div>
           </button>

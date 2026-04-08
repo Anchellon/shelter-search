@@ -1,34 +1,17 @@
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useAppDispatch, useAppSelector } from "@/app/store/hooks";
 import {
   closeResultsPanel,
   setActiveGroupId,
   toggleResultsPanelExpanded,
 } from "@/app/store/slices/uiSlice";
+import { setCurrentReferralSaved } from "@/app/store/slices/chatSlice";
 import { useChat } from "../hooks/useChat";
 import { groupLabel } from "@/shared/utils/groupLabel";
 import MSO from "@/shared/components/MSO";
+import RationaleCard from "@/shared/components/RationaleCard";
 import type { Service } from "@/app/store/slices/chatSlice";
-
-function RationaleCard({ rationale }: { rationale: string }) {
-  const [open, setOpen] = useState(true);
-  return (
-    <div className="border border-grey-2 rounded bg-brand-verylight mb-3">
-      <button
-        onClick={() => setOpen(!open)}
-        aria-expanded={open}
-        className="w-full flex items-center gap-2 px-3 py-2.5 text-left"
-      >
-        <MSO icon="auto_awesome" size={16} className="text-brand" />
-        <span className="text-[12px] font-semibold text-brand flex-1">Why these results?</span>
-        <MSO icon={open ? "expand_less" : "expand_more"} size={16} className="text-brand" />
-      </button>
-      {open && (
-        <p className="px-3 pb-3 text-[12px] text-grey-6 leading-relaxed">{rationale}</p>
-      )}
-    </div>
-  );
-}
+import { starReferral } from "@/services/api";
 
 function ServiceCard({ service }: { service: Service }) {
   const address = [service.address_1, service.city, service.state_province]
@@ -140,14 +123,25 @@ function Pagination({
 
 export default function ResultsPane() {
   const dispatch = useAppDispatch();
-  const groups = useAppSelector((s) => s.chat.groups);
+  const messages = useAppSelector((s) => s.chat.messages);
   const groupResults = useAppSelector((s) => s.chat.groupResults);
   const servicesCache = useAppSelector((s) => s.chat.servicesCache);
   const activeGroupId = useAppSelector((s) => s.ui.activeGroupId);
+  const activeReferralId = useAppSelector((s) => s.ui.activeReferralId);
   const expanded = useAppSelector((s) => s.ui.resultsPanelExpanded);
+  const currentReferralId = useAppSelector((s) => s.chat.currentReferralId);
+  const currentReferralSaved = useAppSelector((s) => s.chat.currentReferralSaved);
+  const conversationId = useAppSelector((s) => s.chat.conversationId);
   const { fetchServicesPage } = useChat();
+  const [saving, setSaving] = useState(false);
 
-  const activeKey = activeGroupId != null ? String(activeGroupId) : Object.keys(groupResults)[0];
+  // Compound key: referralId_groupId
+  const activeKey = activeReferralId && activeGroupId != null
+    ? `${activeReferralId}_${activeGroupId}`
+    : activeGroupId != null
+      ? Object.keys(groupResults).find((k) => k.endsWith(`_${activeGroupId}`)) ?? Object.keys(groupResults)[0]
+      : Object.keys(groupResults)[0];
+
   const gr = activeKey ? groupResults[activeKey] : null;
 
   const { currentPage = 1, pageSize = 10, serviceIds = [], rationale = "" } = gr ?? {};
@@ -155,14 +149,18 @@ export default function ResultsPane() {
   const pageIds = serviceIds.slice((currentPage - 1) * pageSize, currentPage * pageSize);
   const pageServices = pageIds.map((id) => servicesCache[id]).filter(Boolean) as Service[];
 
+  // Groups to show in the header pills — use the active referral message's groups
+  const activeReferralGroups = activeReferralId
+    ? (messages.find((m) => m.type === "referral" && m.referralId === activeReferralId)?.groups ?? [])
+    : [];
 
-  // When the active group changes, fetch its first page if not already cached
+  // When the active key or conversation changes, fetch services if not already cached
   useEffect(() => {
     if (!activeKey || !gr) return;
     const firstPageIds = gr.serviceIds.slice(0, gr.pageSize);
     const hasMissing = firstPageIds.some((id) => !(id in servicesCache));
     if (hasMissing) fetchServicesPage(activeKey, 1);
-  }, [activeKey]);
+  }, [activeKey, conversationId]);
 
   function handlePage(page: number) {
     if (!activeKey) return;
@@ -206,11 +204,11 @@ export default function ResultsPane() {
           </div>
         </div>
 
-        {/* Group pills */}
-        {groups.length > 1 && (
+        {/* Group pills — shown when the active referral has multiple groups */}
+        {activeReferralGroups.length > 1 && (
           <div className="flex gap-1.5 flex-wrap mt-3" role="group" aria-label="Switch group">
-            {groups.map((g) => {
-              const isActive = String(g.group_id) === activeKey;
+            {activeReferralGroups.map((g) => {
+              const isActive = String(g.group_id) === String(activeGroupId);
               return (
                 <button
                   key={g.group_id}
@@ -233,7 +231,7 @@ export default function ResultsPane() {
 
       {/* Results list */}
       <div className="flex-1 overflow-y-auto px-5 py-4 [&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar-thumb]:bg-grey-2 [&::-webkit-scrollbar-thumb]:rounded">
-        {rationale && <RationaleCard rationale={rationale} />}
+        {rationale && <div className="mb-3"><RationaleCard rationale={rationale} /></div>}
 
         {pageServices.length === 0 && pageIds.length > 0 && (
           <p className="text-[13px] text-grey-5 text-center py-8">Loading services...</p>
@@ -267,6 +265,29 @@ export default function ResultsPane() {
           <MSO icon="download" size={15} />
           Export
         </button>
+        <div className="flex-1" />
+        {currentReferralId && (
+          <button
+            aria-label="Save referral"
+            disabled={currentReferralSaved || saving}
+            onClick={() => {
+              setSaving(true);
+              starReferral(currentReferralId)
+                .then(() => dispatch(setCurrentReferralSaved()))
+                .catch(console.error)
+                .finally(() => setSaving(false));
+            }}
+            className={[
+              "flex items-center gap-1.5 text-[12px] font-semibold px-2 py-1.5 rounded transition-colors",
+              currentReferralSaved
+                ? "text-brand cursor-default"
+                : "text-grey-6 hover:text-brand hover:bg-brand-verylight",
+            ].join(" ")}
+          >
+            <MSO icon={currentReferralSaved ? "bookmark" : "bookmark_add"} size={15} />
+            {currentReferralSaved ? "Saved" : saving ? "Saving…" : "Save"}
+          </button>
+        )}
       </div>
     </div>
   );

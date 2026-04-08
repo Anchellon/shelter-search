@@ -48,14 +48,15 @@ export interface Service {
 // ---------- Message types ----------
 
 export type MessageRole = "user" | "assistant";
-export type MessageType = "text" | "group-cards";
+export type MessageType = "text" | "referral";
 
 export interface Message {
   id: string;
   role: MessageRole;
   type: MessageType;
   content: string;
-  groups?: Group[];   // only for type === "group-cards"
+  groups?: Group[];      // present on type === "group-cards" | "referral"
+  referralId?: string;   // present on type === "referral"
 }
 
 // ---------- Conversation snapshot (from GET /conversations/{id}) ----------
@@ -65,6 +66,7 @@ export interface ConversationSnapshot {
   messages: Message[];
   groups: Group[];
   formatted: Record<string, { rationale: string; service_ids: number[] }>;
+  referrals: import("@/services/api").ReferralSummary[];
 }
 
 // ---------- Per-group results with pagination ----------
@@ -83,11 +85,13 @@ export interface ChatState {
   messages: Message[];
   groups: Group[];
   intakeRequest: IntakeRequest | null;
-  groupResults: Record<string, GroupResults>;   // key: group_id as string
+  groupResults: Record<string, GroupResults>;   // key: `${referralId}_${groupId}`
   servicesCache: Record<number, Service>;        // key: service_id
   isStreaming: boolean;
   pendingText: string;   // AI text buffer — invisible until committed via commitPendingMessage
   error: string | null;
+  currentReferralId: string | null;   // id of the currently-active referral (for Save button)
+  currentReferralSaved: boolean;      // true once user has starred it
 }
 
 const initialState: ChatState = {
@@ -100,6 +104,8 @@ const initialState: ChatState = {
   isStreaming: false,
   pendingText: "",
   error: null,
+  currentReferralId: null,
+  currentReferralSaved: false,
 };
 
 // ---------- Slice ----------
@@ -120,6 +126,8 @@ const chatSlice = createSlice({
     streamingBegin(state) {
       state.isStreaming = true;
       state.error = null;
+      state.currentReferralId = null;
+      state.currentReferralSaved = false;
     },
     appendPendingDelta(state, action: PayloadAction<string>) {
       state.pendingText += action.payload;
@@ -169,19 +177,26 @@ const chatSlice = createSlice({
     setGroups(state, action: PayloadAction<Group[]>) {
       state.groups = action.payload;
     },
-    commitGroupCards: {
-      reducer(state, action: PayloadAction<{ id: string }>) {
+
+    // Referral message commit — creates a "referral" type message keyed by referralId
+    commitReferralMessage: {
+      reducer(state, action: PayloadAction<{ id: string; referralId: string }>) {
         if (state.groups.length === 0) return;
+        // Idempotent: remove any existing message for this referralId before pushing
+        state.messages = state.messages.filter(
+          (m) => !(m.type === "referral" && m.referralId === action.payload.referralId)
+        );
         state.messages.push({
           id: action.payload.id,
           role: "assistant",
-          type: "group-cards",
+          type: "referral",
           content: "",
           groups: state.groups,
+          referralId: action.payload.referralId,
         });
       },
-      prepare() {
-        return { payload: { id: `groups_${Date.now()}` } };
+      prepare(referralId: string) {
+        return { payload: { id: `referral_${Date.now()}`, referralId } };
       },
     },
 
@@ -194,12 +209,17 @@ const chatSlice = createSlice({
     },
 
     // --- Results ---
+    // groupResults keyed by `${referralId}_${groupId}` to avoid collisions across turns
     setGroupResults(
       state,
-      action: PayloadAction<Record<string, { rationale: string; service_ids: number[] }>>
+      action: PayloadAction<{
+        formatted: Record<string, { rationale: string; service_ids: number[] }>;
+        referralId: string;
+      }>
     ) {
-      for (const [gid, data] of Object.entries(action.payload)) {
-        state.groupResults[gid] = {
+      const { formatted, referralId } = action.payload;
+      for (const [gid, data] of Object.entries(formatted)) {
+        state.groupResults[`${referralId}_${gid}`] = {
           rationale: data.rationale,
           serviceIds: data.service_ids,
           currentPage: 1,
@@ -209,65 +229,93 @@ const chatSlice = createSlice({
     },
     setGroupPage(
       state,
-      action: PayloadAction<{ groupId: string; page: number }>
+      action: PayloadAction<{ groupKey: string; page: number }>
     ) {
-      const gr = state.groupResults[action.payload.groupId];
+      const gr = state.groupResults[action.payload.groupKey];
       if (gr) gr.currentPage = action.payload.page;
     },
 
     // --- Load saved conversation ---
     loadConversation(state, action: PayloadAction<ConversationSnapshot>) {
-      const { id, messages, groups, formatted } = action.payload;
+      const { id, messages, groups, formatted, referrals } = action.payload;
       state.conversationId = id;
       state.groups = groups;
 
-      // The backend only stores text messages. Synthesize the group-cards message
-      // (normally created by commitGroupCards during a live stream) and inject it
-      // right after the first assistant run — i.e. immediately before the first
-      // follow-up user message (or at the end if there are no follow-up turns).
-      if (groups.length > 0) {
-        // Walk forward: once we've seen at least one assistant message, the next
-        // user message marks the boundary. Insert the card just before it.
-        let insertAt = messages.length;
-        let seenAssistant = false;
-        for (let i = 0; i < messages.length; i++) {
-          if (messages[i].role === "assistant") {
-            seenAssistant = true;
-          } else if (seenAssistant && messages[i].role === "user") {
-            insertAt = i;
-            break;
+      // Insert a "referral" message after each corresponding assistant text message.
+      // Pair by order: 1st referral → after 1st assistant message, etc.
+      // Cards are not pre-selected — user clicks to activate.
+      if (referrals && referrals.length > 0) {
+        const augmented: Message[] = [];
+        let refIdx = 0;
+        for (const msg of messages) {
+          augmented.push(msg);
+          if (msg.role === "assistant" && refIdx < referrals.length) {
+            const ref = referrals[refIdx];
+            augmented.push({
+              id: `referral_restored_${refIdx}`,
+              role: "assistant",
+              type: "referral",
+              content: "",
+              groups: ref.groups as Group[],
+              referralId: ref.id,
+            });
+            refIdx++;
           }
         }
-        const groupCardsMsg: Message = {
-          id: "groups_restored",
-          role: "assistant",
-          type: "group-cards",
-          content: "",
-          groups,
-        };
-        state.messages = [
-          ...messages.slice(0, insertAt),
-          groupCardsMsg,
-          ...messages.slice(insertAt),
-        ];
+        state.messages = augmented;
       } else {
         state.messages = messages;
       }
 
+      // Populate groupResults from each referral's group data
       state.groupResults = {};
-      for (const [gid, data] of Object.entries(formatted)) {
-        state.groupResults[gid] = {
-          rationale: data.rationale,
-          serviceIds: data.service_ids,
-          currentPage: 1,
-          pageSize: 10,
-        };
+      for (const ref of (referrals ?? [])) {
+        for (const group of ref.groups) {
+          const sids = (group as { service_ids?: number[] }).service_ids;
+          if (sids && sids.length > 0) {
+            state.groupResults[`${ref.id}_${group.group_id}`] = {
+              rationale: (group as { rationale?: string | null }).rationale ?? "",
+              serviceIds: sids,
+              currentPage: 1,
+              pageSize: 10,
+            };
+          }
+        }
       }
+
+      // Fallback: use snapshot.formatted for the last referral in case service_ids
+      // were not included in the referral groups (list vs detail response shapes)
+      if (referrals && referrals.length > 0 && formatted) {
+        const lastRef = referrals[referrals.length - 1];
+        for (const [gid, data] of Object.entries(formatted)) {
+          const key = `${lastRef.id}_${gid}`;
+          if (!state.groupResults[key]) {
+            state.groupResults[key] = {
+              rationale: data.rationale,
+              serviceIds: data.service_ids,
+              currentPage: 1,
+              pageSize: 10,
+            };
+          }
+        }
+      }
+
       state.servicesCache = {};
       state.intakeRequest = null;
       state.isStreaming = false;
       state.pendingText = "";
       state.error = null;
+      state.currentReferralId = null;
+      state.currentReferralSaved = false;
+    },
+
+    // --- Referral ---
+    setCurrentReferral(state, action: PayloadAction<string>) {
+      state.currentReferralId = action.payload;
+      state.currentReferralSaved = false;
+    },
+    setCurrentReferralSaved(state) {
+      state.currentReferralSaved = true;
     },
 
     // --- Services cache ---
@@ -290,11 +338,13 @@ export const {
   streamError,
   addUserMessage,
   setGroups,
-  commitGroupCards,
+  commitReferralMessage,
   setIntakeRequest,
   clearIntakeRequest,
   setGroupResults,
   setGroupPage,
+  setCurrentReferral,
+  setCurrentReferralSaved,
   mergeServicesCache,
 } = chatSlice.actions;
 

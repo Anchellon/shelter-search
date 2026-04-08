@@ -2,7 +2,8 @@ import { useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth0 } from "@auth0/auth0-react";
 import { useAppDispatch } from "@/app/store/hooks";
-import { openAuthModal } from "@/app/store/slices/uiSlice";
+import { openAuthModal, closeResultsPanel, setActiveGroupId } from "@/app/store/slices/uiSlice";
+import { resetConversation } from "@/app/store/slices/chatSlice";
 import Sidebar from "@/shared/components/Sidebar";
 import MobileHeader from "@/shared/components/MobileHeader";
 import ShelterTechLogo from "@/shared/components/ShelterTechLogo";
@@ -49,6 +50,9 @@ export default function LandingPage() {
       dispatch(openAuthModal());
       return;
     }
+    dispatch(resetConversation());
+    dispatch(closeResultsPanel());
+    dispatch(setActiveGroupId(null));
     navigate(ROUTES.CHAT, { state: { initialMessage: trimmed } });
   }
 
