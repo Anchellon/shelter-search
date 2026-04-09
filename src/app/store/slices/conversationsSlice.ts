@@ -4,6 +4,7 @@ import type { PayloadAction } from "@reduxjs/toolkit";
 export interface ConversationSummary {
   id: string;
   title: string;
+  updated_at: string;
 }
 
 interface ConversationsState {

@@ -6,6 +6,7 @@ import { setSidebarOpen } from "@/app/store/slices/uiSlice";
 import LandingPage from "@/features/landing/LandingPage";
 import ChatPage from "@/features/chat/ChatPage";
 import CollectionsPage from "@/features/collections/CollectionsPage";
+import RecentsPage from "@/features/recents/RecentsPage";
 import AuthModal from "@/shared/components/AuthModal";
 
 function SidebarInit() {
@@ -26,6 +27,7 @@ export default function AppRouter() {
         <Route path={ROUTES.HOME} element={<LandingPage />} />
         <Route path={ROUTES.CHAT} element={<ChatPage />} />
         <Route path={ROUTES.COLLECTIONS} element={<CollectionsPage />} />
+        <Route path={ROUTES.RECENTS} element={<RecentsPage />} />
       </Routes>
     </BrowserRouter>
   );

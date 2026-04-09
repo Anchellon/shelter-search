@@ -29,7 +29,7 @@ export default function Sidebar() {
     if (!isAuthenticated) return;
     dispatch(setConversationsLoading(true));
     listConversations()
-      .then((data) => dispatch(setConversations(data)))
+      .then((data) => dispatch(setConversations(data.conversations)))
       .catch(() => {})
       .finally(() => dispatch(setConversationsLoading(false)));
   }, [isAuthenticated, dispatch]);
@@ -115,6 +115,17 @@ export default function Sidebar() {
             >
               <MSO icon="bookmark" size={18} className={location.pathname === ROUTES.COLLECTIONS ? "text-brand" : "text-grey-5"} />
               Collections
+            </button>
+            <button
+              onClick={() => { navigate(ROUTES.RECENTS); dispatch(setSidebarOpen(false)); }}
+              className={["w-full flex items-center gap-2.5 px-2.5 py-2 rounded-sm text-sm transition-colors",
+                location.pathname === ROUTES.RECENTS
+                  ? "bg-brand-verylight text-brand font-semibold"
+                  : "text-grey-9 hover:bg-grey-2",
+              ].join(" ")}
+            >
+              <MSO icon="chat_bubble" size={18} className={location.pathname === ROUTES.RECENTS ? "text-brand" : "text-grey-5"} />
+              Chats
             </button>
           </div>
 
@@ -204,6 +215,9 @@ export default function Sidebar() {
         </button>
         <button onClick={() => navigate(ROUTES.COLLECTIONS)} title="Collections" aria-label="Collections" className={iconBtn}>
           <MSO icon="bookmark" />
+        </button>
+        <button onClick={() => navigate(ROUTES.RECENTS)} title="Chats" aria-label="Chats" className={iconBtn}>
+          <MSO icon="chat_bubble" />
         </button>
         {!isAuthenticated && (
           <button

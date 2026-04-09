@@ -252,13 +252,18 @@ export async function deleteReferral(id: string): Promise<void> {
 
 // ---------- Conversations ----------
 
-export async function listConversations(): Promise<ConversationSummary[]> {
-  const res = await fetch(`${BASE_URL}/conversations`, {
+export async function listConversations(opts: {
+  q?: string;
+  offset?: number;
+} = {}): Promise<{ conversations: ConversationSummary[]; has_more: boolean }> {
+  const params = new URLSearchParams();
+  if (opts.q) params.set("q", opts.q);
+  if (opts.offset) params.set("offset", String(opts.offset));
+  const res = await fetch(`${BASE_URL}/conversations?${params}`, {
     headers: await authHeaders(),
   });
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
-  const data = await res.json();
-  return data.conversations;
+  return res.json();
 }
 
 export async function getConversation(id: string): Promise<ConversationSnapshot> {
