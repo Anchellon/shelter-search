@@ -92,6 +92,7 @@ export interface ChatState {
   error: string | null;
   currentReferralId: string | null;   // id of the currently-active referral (for Save button)
   currentReferralSaved: boolean;      // true once user has starred it
+  referralSavedMap: Record<string, boolean>;  // persists saved state across card clicks
 }
 
 const initialState: ChatState = {
@@ -106,6 +107,7 @@ const initialState: ChatState = {
   error: null,
   currentReferralId: null,
   currentReferralSaved: false,
+  referralSavedMap: {},
 };
 
 // ---------- Slice ----------
@@ -307,15 +309,21 @@ const chatSlice = createSlice({
       state.error = null;
       state.currentReferralId = null;
       state.currentReferralSaved = false;
+      state.referralSavedMap = Object.fromEntries(
+        (action.payload.referrals ?? []).map((r) => [r.id, r.saved])
+      );
     },
 
     // --- Referral ---
     setCurrentReferral(state, action: PayloadAction<string>) {
       state.currentReferralId = action.payload;
-      state.currentReferralSaved = false;
+      state.currentReferralSaved = state.referralSavedMap[action.payload] ?? false;
     },
-    setCurrentReferralSaved(state) {
-      state.currentReferralSaved = true;
+    setCurrentReferralSaved(state, action: PayloadAction<boolean>) {
+      state.currentReferralSaved = action.payload;
+      if (state.currentReferralId) {
+        state.referralSavedMap[state.currentReferralId] = action.payload;
+      }
     },
 
     // --- Services cache ---

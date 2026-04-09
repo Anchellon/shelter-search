@@ -1045,7 +1045,6 @@
     <!-- Context menu (shared) -->
     <div class="context-menu" id="contextMenu">
       <button class="context-menu-item"><span class="material-symbols-outlined">edit</span>Rename</button>
-      <button class="context-menu-item"><span class="material-symbols-outlined">refresh</span>Re-run Search</button>
       <div class="context-menu-divider"></div>
       <button class="context-menu-item danger"><span class="material-symbols-outlined">delete</span>Delete</button>
     </div>
@@ -1150,8 +1149,11 @@
       }
 
       /* ── Context menu ── */
+      let activeCollectionId = null;
+
       function openMenu(event, btn) {
         event.stopPropagation();
+        activeCollectionId = btn.closest('.collection-item').dataset.id;
         const menu = document.getElementById('contextMenu');
         const rect = btn.getBoundingClientRect();
         menu.style.top = (rect.bottom + 4) + 'px';
@@ -1167,6 +1169,28 @@
 
       document.addEventListener('click', () => {
         document.getElementById('contextMenu').classList.remove('visible');
+      });
+
+      document.querySelector('#contextMenu .context-menu-item.danger').addEventListener('click', async (e) => {
+        e.stopPropagation();
+        document.getElementById('contextMenu').classList.remove('visible');
+
+        if (!confirm('Remove this collection from saved? It will still be accessible from chat history.')) return;
+
+        try {
+          const res = await fetch(`/api/v1/referrals/${activeCollectionId}`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ saved: false }),
+          });
+          if (res.ok) {
+            document.querySelector(`.collection-item[data-id="${activeCollectionId}"]`)?.remove();
+          } else {
+            alert('Could not remove collection. Please try again.');
+          }
+        } catch {
+          alert('Network error. Please try again.');
+        }
       });
 
       /* ── Filter ── */

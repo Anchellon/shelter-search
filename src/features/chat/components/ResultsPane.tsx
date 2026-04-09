@@ -134,6 +134,7 @@ export default function ResultsPane() {
   const conversationId = useAppSelector((s) => s.chat.conversationId);
   const { fetchServicesPage } = useChat();
   const [saving, setSaving] = useState(false);
+  const [hoveringBookmark, setHoveringBookmark] = useState(false);
 
   // Compound key: referralId_groupId
   const activeKey = activeReferralId && activeGroupId != null
@@ -268,24 +269,29 @@ export default function ResultsPane() {
         <div className="flex-1" />
         {currentReferralId && (
           <button
-            aria-label="Save referral"
-            disabled={currentReferralSaved || saving}
+            aria-label={currentReferralSaved ? "Unsave referral" : "Save referral"}
+            disabled={saving}
+            onMouseEnter={() => setHoveringBookmark(true)}
+            onMouseLeave={() => setHoveringBookmark(false)}
             onClick={() => {
+              const next = !currentReferralSaved;
               setSaving(true);
-              starReferral(currentReferralId)
-                .then(() => dispatch(setCurrentReferralSaved()))
+              starReferral(currentReferralId, next)
+                .then(() => dispatch(setCurrentReferralSaved(next)))
                 .catch(console.error)
                 .finally(() => setSaving(false));
             }}
             className={[
               "flex items-center gap-1.5 text-[12px] font-semibold px-2 py-1.5 rounded transition-colors",
               currentReferralSaved
-                ? "text-brand cursor-default"
+                ? hoveringBookmark
+                  ? "bg-danger-bg text-danger-text"
+                  : "bg-brand text-white"
                 : "text-grey-6 hover:text-brand hover:bg-brand-verylight",
             ].join(" ")}
           >
-            <MSO icon={currentReferralSaved ? "bookmark" : "bookmark_add"} size={15} />
-            {currentReferralSaved ? "Saved" : saving ? "Saving…" : "Save"}
+            <MSO icon={currentReferralSaved ? (hoveringBookmark ? "bookmark_remove" : "bookmark") : "bookmark_add"} size={15} />
+            {saving ? "Saving…" : currentReferralSaved ? (hoveringBookmark ? "Unsave" : "Saved") : "Save"}
           </button>
         )}
       </div>

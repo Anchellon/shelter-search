@@ -216,10 +216,11 @@ export async function createReferral(payload: CreateReferralPayload): Promise<{ 
   return res.json();
 }
 
-export async function starReferral(id: string): Promise<{ id: string; saved: boolean }> {
-  const res = await fetch(`${BASE_URL}/referrals/${id}/save`, {
+export async function starReferral(id: string, saved: boolean): Promise<{ id: string; saved: boolean }> {
+  const res = await fetch(`${BASE_URL}/referrals/${id}`, {
     method: "PATCH",
-    headers: await authHeaders(),
+    headers: { ...await authHeaders(), "Content-Type": "application/json" },
+    body: JSON.stringify({ saved }),
   });
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
   return res.json();
