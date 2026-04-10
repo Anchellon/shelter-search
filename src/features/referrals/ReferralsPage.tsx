@@ -4,11 +4,12 @@ import { useAuth0 } from "@auth0/auth0-react";
 import Sidebar from "@/shared/components/Sidebar";
 import MSO from "@/shared/components/MSO";
 import { ROUTES } from "@/app/router/routes";
-import { listReferrals, starReferral } from "@/services/api";
+import { listReferrals, starReferral, updateReferral } from "@/services/api";
 import type { ReferralSummary } from "@/services/api";
 import ReferralCard from "./components/ReferralCard";
 import ResultsView from "./components/ResultsView";
 import ContextMenu from "./components/ContextMenu";
+import RenameCollectionModal from "./components/RenameCollectionModal";
 
 export default function ReferralsPage() {
   const navigate = useNavigate();
@@ -22,6 +23,8 @@ export default function ReferralsPage() {
   const [selectedGroup, setSelectedGroup] = useState<{ referral: ReferralSummary; groupIndex: number } | null>(null);
   const [activeGroupIndex, setActiveGroupIndex] = useState(0);
   const [contextMenu, setContextMenu] = useState<{ id: string; x: number; y: number } | null>(null);
+  const [renameTarget, setRenameTarget] = useState<ReferralSummary | null>(null);
+  const [renaming, setRenaming] = useState(false);
 
   useEffect(() => {
     if (!isAuthenticated) return;
@@ -40,6 +43,26 @@ export default function ReferralsPage() {
   function handleGroupClick(referral: ReferralSummary, groupIndex: number) {
     setActiveGroupIndex(groupIndex);
     setSelectedGroup({ referral, groupIndex });
+  }
+
+  function handleRenameOpen(id: string) {
+    setContextMenu(null);
+    setOpenAccordionId(null);
+    setRenameTarget(referrals.find((r) => r.id === id) ?? null);
+  }
+
+  function handleRenameConfirm(newTitle: string) {
+    if (!renameTarget) return;
+    setRenaming(true);
+    updateReferral(renameTarget.id, { title: newTitle })
+      .then(() => {
+        setReferrals((prev) =>
+          prev.map((r) => r.id === renameTarget.id ? { ...r, title: newTitle } : r)
+        );
+        setRenameTarget(null);
+      })
+      .catch(() => setError("Failed to rename."))
+      .finally(() => setRenaming(false));
   }
 
   function handleDelete(id: string) {
@@ -139,9 +162,17 @@ export default function ReferralsPage() {
           x={contextMenu.x}
           y={contextMenu.y}
           onClose={() => setContextMenu(null)}
+          onRename={() => handleRenameOpen(contextMenu.id)}
           onDelete={() => handleDelete(contextMenu.id)}
         />
       )}
+
+      <RenameCollectionModal
+        referral={renameTarget}
+        saving={renaming}
+        onConfirm={handleRenameConfirm}
+        onCancel={() => setRenameTarget(null)}
+      />
     </div>
   );
 }

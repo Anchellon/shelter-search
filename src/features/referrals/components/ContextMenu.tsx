@@ -5,10 +5,11 @@ interface Props {
   x: number;
   y: number;
   onClose: () => void;
+  onRename: () => void;
   onDelete: () => void;
 }
 
-export default function ContextMenu({ x, y, onClose, onDelete }: Props) {
+export default function ContextMenu({ x, y, onClose, onRename, onDelete }: Props) {
   const menuRef = useRef<HTMLDivElement>(null);
 
   // Clamp position so menu doesn't overflow viewport
@@ -34,7 +35,7 @@ export default function ContextMenu({ x, y, onClose, onDelete }: Props) {
       style={{ top: y, left: clampedX }}
       onClick={(e) => e.stopPropagation()}
     >
-      <button className={itemClass}>
+      <button className={itemClass} onClick={onRename}>
         <MSO icon="edit" size={16} className="text-grey-5" />
         Rename
       </button>
