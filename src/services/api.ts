@@ -13,6 +13,10 @@ export function setTokenGetter(fn: () => Promise<string>) {
   tokenGetter = fn;
 }
 
+export function clearTokenGetter() {
+  tokenGetter = null;
+}
+
 async function authHeaders(): Promise<HeadersInit> {
   if (!tokenGetter) return {};
   const token = await tokenGetter();

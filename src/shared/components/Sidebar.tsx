@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth0 } from "@auth0/auth0-react";
 import { useAppDispatch, useAppSelector } from "@/app/store/hooks";
@@ -9,20 +9,25 @@ import {
   closeResultsPanel,
 } from "@/app/store/slices/uiSlice";
 import { loadConversation } from "@/app/store/slices/chatSlice";
+import { resetConversation } from "@/app/store/slices/chatSlice";
 import { setConversations, setConversationsLoading } from "@/app/store/slices/conversationsSlice";
-import { listConversations, getConversation } from "@/services/api";
+import { clearUser } from "@/app/store/slices/userSlice";
+import { listConversations, getConversation, clearTokenGetter } from "@/services/api";
 import { ROUTES } from "@/app/router/routes";
 import MSO from "./MSO";
 import ShelterTechLogo from "./ShelterTechLogo";
 
 export default function Sidebar() {
   const dispatch = useAppDispatch();
-  const { isAuthenticated, user } = useAuth0();
+  const { isAuthenticated, user, logout } = useAuth0();
   const sidebarOpen = useAppSelector((s) => s.ui.sidebarOpen);
   const { conversations, loading } = useAppSelector((s) => s.conversations);
   const navigate = useNavigate();
   const location = useLocation();
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [menuAnchorPos, setMenuAnchorPos] = useState<{ top: number; left: number } | null>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
 
   // Fetch (or re-fetch) conversations whenever the user logs in
   useEffect(() => {
@@ -34,6 +39,23 @@ export default function Sidebar() {
       .finally(() => dispatch(setConversationsLoading(false)));
   }, [isAuthenticated, dispatch]);
 
+  // Close menu on outside click
+  useEffect(() => {
+    if (!menuOpen) return;
+    const handler = (e: MouseEvent) => {
+      if (
+        menuRef.current &&
+        !menuRef.current.contains(e.target as Node) &&
+        userFooterRef.current &&
+        !userFooterRef.current.contains(e.target as Node)
+      ) {
+        setMenuOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [menuOpen]);
+
   async function handleConversationClick(id: string) {
     setLoadError(null);
     try {
@@ -44,6 +66,21 @@ export default function Sidebar() {
     } catch {
       setLoadError("Failed to load conversation. Please try again.");
     }
+  }
+
+  function handleLogout() {
+    setMenuOpen(false);
+    dispatch(resetConversation());
+    dispatch(setConversations([]));
+    dispatch(clearUser());
+    clearTokenGetter();
+    logout({ logoutParams: { returnTo: window.location.origin + ROUTES.LOGGED_OUT } });
+  }
+
+  function openUserMenu(e: React.MouseEvent<HTMLButtonElement>) {
+    const rect = e.currentTarget.getBoundingClientRect();
+    setMenuAnchorPos({ top: rect.top - 8, left: rect.left });
+    setMenuOpen((v) => !v);
   }
 
   const iconBtn =
@@ -60,6 +97,34 @@ export default function Sidebar() {
           className="fixed inset-0 bg-black/30 z-40 lg:hidden"
           onClick={() => dispatch(setSidebarOpen(false))}
         />
+      )}
+
+      {/* User context menu popover */}
+      {menuOpen && menuAnchorPos && (
+        <div
+          ref={menuRef}
+          className="fixed z-[500] bg-white border border-grey-2 rounded shadow-modal py-1 min-w-[220px]"
+          style={{ top: menuAnchorPos.top, left: menuAnchorPos.left, transform: "translateY(-100%)" }}
+          onClick={(e) => e.stopPropagation()}
+        >
+          {/* Email header */}
+          <div className="px-3.5 py-2.5">
+            <div className="text-[11px] font-semibold text-grey-5 uppercase tracking-[0.06em] mb-0.5">
+              Signed in as
+            </div>
+            <div className="text-[13px] text-grey-9 font-medium truncate">
+              {user?.email ?? userName}
+            </div>
+          </div>
+          <div className="h-px bg-grey-2" />
+          <button
+            onClick={handleLogout}
+            className="flex items-center gap-2 px-3.5 py-2 text-[13px] text-danger-text w-full text-left hover:bg-grey-1 transition-colors"
+          >
+            <MSO icon="logout" size={16} className="text-danger-text" />
+            Log out
+          </button>
+        </div>
       )}
 
       {/* Sidebar */}
@@ -164,7 +229,14 @@ export default function Sidebar() {
           {/* Footer */}
           <div className="px-3 pt-3 mt-2 border-t border-grey-2">
             {isAuthenticated ? (
-              <div className="flex items-center gap-2.5">
+              <button
+                onClick={openUserMenu}
+                className={[
+                  "w-full flex items-center gap-2.5 rounded-sm px-1 py-1 text-left transition-colors",
+                  menuOpen ? "bg-grey-2" : "hover:bg-grey-2",
+                ].join(" ")}
+                aria-label="Account menu"
+              >
                 {user?.picture ? (
                   <img
                     src={user.picture}
@@ -180,7 +252,8 @@ export default function Sidebar() {
                   <div className="text-[13px] font-semibold text-grey-9 truncate">{userName}</div>
                   <div className="text-[11px] text-grey-5">Case Worker</div>
                 </div>
-              </div>
+                <MSO icon="expand_less" size={16} className="text-grey-5 flex-shrink-0" />
+              </button>
             ) : (
               <button
                 onClick={() => dispatch(openAuthModal())}
@@ -219,6 +292,7 @@ export default function Sidebar() {
         <button onClick={() => navigate(ROUTES.RECENTS)} title="Chats" aria-label="Chats" className={iconBtn}>
           <MSO icon="chat_bubble" />
         </button>
+        <div className="flex-1" />
         {!isAuthenticated && (
           <button
             onClick={() => dispatch(openAuthModal())}
@@ -227,6 +301,29 @@ export default function Sidebar() {
             className={iconBtn}
           >
             <MSO icon="login" />
+          </button>
+        )}
+        {isAuthenticated && (
+          <button
+            onClick={openUserMenu}
+            title="Account menu"
+            aria-label="Account menu"
+            className={[
+              "w-[34px] h-[34px] rounded-full overflow-hidden flex-shrink-0 flex items-center justify-center transition-opacity",
+              menuOpen ? "opacity-80" : "hover:opacity-80",
+            ].join(" ")}
+          >
+            {user?.picture ? (
+              <img
+                src={user.picture}
+                alt={userName}
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              <div className="w-full h-full rounded-full bg-brand text-white flex items-center justify-center text-[13px] font-bold">
+                {avatarInitial}
+              </div>
+            )}
           </button>
         )}
       </div>

@@ -3,4 +3,5 @@ export const ROUTES = {
   CHAT: "/chat",
   REFERRALS: "/referrals",
   RECENTS: "/recents",
+  LOGGED_OUT: "/logged-out",
 } as const;
