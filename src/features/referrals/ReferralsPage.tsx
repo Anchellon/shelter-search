@@ -10,7 +10,7 @@ import ReferralCard from "./components/ReferralCard";
 import ResultsView from "./components/ResultsView";
 import ContextMenu from "./components/ContextMenu";
 
-export default function CollectionsPage() {
+export default function ReferralsPage() {
   const navigate = useNavigate();
   const { isAuthenticated } = useAuth0();
 

@@ -106,15 +106,15 @@ export default function Sidebar() {
               New Search
             </button>
             <button
-              onClick={() => { navigate(ROUTES.COLLECTIONS); dispatch(setSidebarOpen(false)); }}
+              onClick={() => { navigate(ROUTES.REFERRALS); dispatch(setSidebarOpen(false)); }}
               className={["w-full flex items-center gap-2.5 px-2.5 py-2 rounded-sm text-sm transition-colors",
-                location.pathname === ROUTES.COLLECTIONS
+                location.pathname === ROUTES.REFERRALS
                   ? "bg-brand-verylight text-brand font-semibold"
                   : "text-grey-9 hover:bg-grey-2",
               ].join(" ")}
             >
-              <MSO icon="bookmark" size={18} className={location.pathname === ROUTES.COLLECTIONS ? "text-brand" : "text-grey-5"} />
-              Collections
+              <MSO icon="bookmark" size={18} className={location.pathname === ROUTES.REFERRALS ? "text-brand" : "text-grey-5"} />
+              Referrals
             </button>
             <button
               onClick={() => { navigate(ROUTES.RECENTS); dispatch(setSidebarOpen(false)); }}
@@ -213,7 +213,7 @@ export default function Sidebar() {
         >
           <MSO icon="add" size={18} className="text-white" />
         </button>
-        <button onClick={() => navigate(ROUTES.COLLECTIONS)} title="Collections" aria-label="Collections" className={iconBtn}>
+        <button onClick={() => navigate(ROUTES.REFERRALS)} title="Referrals" aria-label="Referrals" className={iconBtn}>
           <MSO icon="bookmark" />
         </button>
         <button onClick={() => navigate(ROUTES.RECENTS)} title="Chats" aria-label="Chats" className={iconBtn}>

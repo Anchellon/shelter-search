@@ -1,6 +1,6 @@
 export const ROUTES = {
   HOME: "/",
   CHAT: "/chat",
-  COLLECTIONS: "/collections",
+  REFERRALS: "/referrals",
   RECENTS: "/recents",
 } as const;
