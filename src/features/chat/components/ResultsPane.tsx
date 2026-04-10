@@ -121,7 +121,7 @@ function Pagination({
   );
 }
 
-export default function ResultsPane() {
+export default function ResultsPane({ onSaveClick }: { onSaveClick: () => void }) {
   const dispatch = useAppDispatch();
   const messages = useAppSelector((s) => s.chat.messages);
   const groupResults = useAppSelector((s) => s.chat.groupResults);
@@ -274,12 +274,15 @@ export default function ResultsPane() {
             onMouseEnter={() => setHoveringBookmark(true)}
             onMouseLeave={() => setHoveringBookmark(false)}
             onClick={() => {
-              const next = !currentReferralSaved;
-              setSaving(true);
-              starReferral(currentReferralId, next)
-                .then(() => dispatch(setCurrentReferralSaved(next)))
-                .catch(console.error)
-                .finally(() => setSaving(false));
+              if (currentReferralSaved) {
+                setSaving(true);
+                starReferral(currentReferralId, false)
+                  .then(() => dispatch(setCurrentReferralSaved(false)))
+                  .catch(console.error)
+                  .finally(() => setSaving(false));
+              } else {
+                onSaveClick();
+              }
             }}
             className={[
               "flex items-center gap-1.5 text-[12px] font-semibold px-2 py-1.5 rounded transition-colors",

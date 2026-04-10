@@ -4,7 +4,7 @@ import { useAuth0 } from "@auth0/auth0-react";
 import Sidebar from "@/shared/components/Sidebar";
 import MSO from "@/shared/components/MSO";
 import { ROUTES } from "@/app/router/routes";
-import { listReferrals, deleteReferral } from "@/services/api";
+import { listReferrals, starReferral } from "@/services/api";
 import type { ReferralSummary } from "@/services/api";
 import ReferralCard from "./components/ReferralCard";
 import ResultsView from "./components/ResultsView";
@@ -39,9 +39,9 @@ export default function CollectionsPage() {
 
   function handleDelete(id: string) {
     setContextMenu(null);
-    deleteReferral(id)
+    starReferral(id, false)
       .then(() => setReferrals((prev) => prev.filter((r) => r.id !== id)))
-      .catch(() => setError("Failed to delete referral."));
+      .catch(() => setError("Failed to remove referral."));
   }
 
   function handleMoreClick(e: React.MouseEvent<HTMLButtonElement>, id: string) {

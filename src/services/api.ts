@@ -226,6 +226,19 @@ export async function starReferral(id: string, saved: boolean): Promise<{ id: st
   return res.json();
 }
 
+export async function updateReferral(
+  id: string,
+  patch: { title?: string; saved?: boolean },
+): Promise<{ id: string; title?: string; saved?: boolean }> {
+  const res = await fetch(`${BASE_URL}/referrals/${id}`, {
+    method: "PATCH",
+    headers: { ...(await authHeaders()), "Content-Type": "application/json" },
+    body: JSON.stringify(patch),
+  });
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  return res.json();
+}
+
 export async function listReferrals(): Promise<ReferralSummary[]> {
   const res = await fetch(`${BASE_URL}/referrals`, {
     headers: await authHeaders(),

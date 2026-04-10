@@ -43,8 +43,8 @@ export default function ContextMenu({ x, y, onClose, onDelete }: Props) {
         onClick={onDelete}
         className={[itemClass, "text-danger-text"].join(" ")}
       >
-        <MSO icon="delete" size={16} className="text-danger-text" />
-        Delete
+        <MSO icon="bookmark_remove" size={16} className="text-danger-text" />
+        Remove from collection
       </button>
     </div>
   );
