@@ -18,8 +18,9 @@ export default function ReferralsPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [filterQuery, setFilterQuery] = useState("");
-  const [selected, setSelected] = useState<ReferralSummary | null>(null);
-  const [selectedIndex, setSelectedIndex] = useState(0);
+  const [openAccordionId, setOpenAccordionId] = useState<string | null>(null);
+  const [selectedGroup, setSelectedGroup] = useState<{ referral: ReferralSummary; groupIndex: number } | null>(null);
+  const [activeGroupIndex, setActiveGroupIndex] = useState(0);
   const [contextMenu, setContextMenu] = useState<{ id: string; x: number; y: number } | null>(null);
 
   useEffect(() => {
@@ -32,13 +33,18 @@ export default function ReferralsPage() {
       .finally(() => setLoading(false));
   }, [isAuthenticated]);
 
-  function handleOpen(referral: ReferralSummary, index: number) {
-    setSelected(referral);
-    setSelectedIndex(index);
+  function handleToggle(id: string) {
+    setOpenAccordionId((prev) => (prev === id ? null : id));
+  }
+
+  function handleGroupClick(referral: ReferralSummary, groupIndex: number) {
+    setActiveGroupIndex(groupIndex);
+    setSelectedGroup({ referral, groupIndex });
   }
 
   function handleDelete(id: string) {
     setContextMenu(null);
+    if (selectedGroup?.referral.id === id) setSelectedGroup(null);
     starReferral(id, false)
       .then(() => setReferrals((prev) => prev.filter((r) => r.id !== id)))
       .catch(() => setError("Failed to remove referral."));
@@ -62,7 +68,7 @@ export default function ReferralsPage() {
         <div className="px-10 pt-12 pb-8 flex-shrink-0">
           <div className="max-w-[860px] mx-auto w-full">
             <div className="flex items-center justify-between mb-5">
-              <h1 className="text-[22px] font-bold text-grey-9 tracking-tight">Referrals</h1>
+              <h1 className="text-[22px] font-bold text-grey-9 tracking-tight">Saved Searches</h1>
               <button
                 onClick={() => navigate(ROUTES.HOME)}
                 className="inline-flex items-center gap-1.5 px-4 py-2 bg-grey-9 text-white text-[13px] font-semibold rounded hover:bg-[#1a2224] transition-colors"
@@ -73,7 +79,7 @@ export default function ReferralsPage() {
             </div>
 
             <p className="text-[13px] text-grey-5 mb-9 max-w-[580px]">
-              Your saved referrals — each containing the matched services for a set of identified needs.
+              Access your archived intelligence snapshots. Re-run discoveries based on previously identified crisis groups and what help they require.
             </p>
 
             <div className="flex items-center gap-2 border-[1.5px] border-brand-light rounded-md px-4 py-2.5 bg-white transition-[border-color,box-shadow] duration-150 focus-within:border-brand focus-within:shadow-[0_0_0_3px_rgba(39,108,229,0.09)]">
@@ -81,7 +87,7 @@ export default function ReferralsPage() {
               <input
                 value={filterQuery}
                 onChange={(e) => setFilterQuery(e.target.value)}
-                placeholder="Filter referrals…"
+                placeholder="Filter searches…"
                 className="border-none outline-none bg-transparent text-sm text-grey-9 flex-1 placeholder:text-[#b8b8b8]"
               />
             </div>
@@ -93,7 +99,7 @@ export default function ReferralsPage() {
           <div className="flex flex-col gap-2 max-w-[860px] mx-auto w-full">
             {!isAuthenticated && (
               <div className="text-[13px] text-grey-5 py-8 text-center">
-                Sign in to view your referrals.
+                Sign in to view your saved searches.
               </div>
             )}
             {isAuthenticated && loading && (
@@ -104,16 +110,17 @@ export default function ReferralsPage() {
             )}
             {isAuthenticated && !loading && filtered.length === 0 && !error && (
               <div className="text-[13px] text-grey-5 py-8 text-center">
-                {filterQuery ? "No referrals match your filter." : "No saved referrals yet."}
+                {filterQuery ? "No searches match your filter." : "No saved searches yet."}
               </div>
             )}
-            {filtered.map((referral, i) => (
+            {filtered.map((referral) => (
               <ReferralCard
                 key={referral.id}
                 referral={referral}
-                index={i}
-                onOpen={() => handleOpen(referral, i)}
-                onMoreClick={(e: React.MouseEvent<HTMLButtonElement>) => handleMoreClick(e, referral.id)}
+                isOpen={openAccordionId === referral.id}
+                onToggle={() => handleToggle(referral.id)}
+                onGroupClick={(groupIndex) => handleGroupClick(referral, groupIndex)}
+                onMoreClick={(e) => handleMoreClick(e, referral.id)}
               />
             ))}
           </div>
@@ -121,9 +128,10 @@ export default function ReferralsPage() {
       </main>
 
       <ResultsView
-        referral={selected}
-        index={selectedIndex}
-        onClose={() => setSelected(null)}
+        referral={selectedGroup?.referral ?? null}
+        activeGroupIndex={activeGroupIndex}
+        onGroupChange={setActiveGroupIndex}
+        onClose={() => setSelectedGroup(null)}
       />
 
       {contextMenu && (
