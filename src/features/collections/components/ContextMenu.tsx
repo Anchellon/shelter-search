@@ -38,10 +38,6 @@ export default function ContextMenu({ x, y, onClose, onDelete }: Props) {
         <MSO icon="edit" size={16} className="text-grey-5" />
         Rename
       </button>
-      <button className={itemClass}>
-        <MSO icon="refresh" size={16} className="text-grey-5" />
-        Re-run Search
-      </button>
       <div className="h-px bg-grey-2 my-1" />
       <button
         onClick={onDelete}
