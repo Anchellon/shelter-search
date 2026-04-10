@@ -153,7 +153,7 @@ export default function RecentsPage() {
                         onClick={() => handleOpen(conv.id)}
                         className="w-full text-left px-1 py-3 hover:bg-grey-1 rounded transition-colors"
                       >
-                        <div className="text-[14px] font-semibold text-grey-9 truncate">
+                        <div className="text-[14px] font-semibold text-grey-9 line-clamp-2">
                           {conv.title}
                         </div>
                         <div className="text-[12px] text-grey-5 mt-0.5">
