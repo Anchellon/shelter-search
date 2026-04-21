@@ -28,6 +28,7 @@ export default function Sidebar() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [menuAnchorPos, setMenuAnchorPos] = useState<{ top: number; left: number } | null>(null);
   const menuRef = useRef<HTMLDivElement>(null);
+  const userFooterRef = useRef<HTMLButtonElement>(null);
 
   // Fetch (or re-fetch) conversations whenever the user logs in
   useEffect(() => {
@@ -230,6 +231,7 @@ export default function Sidebar() {
           <div className="px-3 pt-3 mt-2 border-t border-grey-2">
             {isAuthenticated ? (
               <button
+                ref={userFooterRef}
                 onClick={openUserMenu}
                 className={[
                   "w-full flex items-center gap-2.5 rounded-sm px-1 py-1 text-left transition-colors",

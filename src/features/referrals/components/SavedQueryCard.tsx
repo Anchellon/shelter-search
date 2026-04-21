@@ -1,4 +1,4 @@
-import type { SavedQuerySummary } from "@/services/api";
+import type { ReferralSummary as SavedQuerySummary } from "@/services/api";
 import { TAG_VARIANTS } from "@/shared/components/GroupTag";
 import GroupTag from "@/shared/components/GroupTag";
 import MSO from "@/shared/components/MSO";
