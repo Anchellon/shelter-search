@@ -221,6 +221,7 @@ export function useChat() {
         return;
       }
       dispatch(clearIntakeRequest());
+      dispatch(streamingBegin());
 
       try {
         await processStream(api.resume({ conversationId, action: "submit", answers }));
