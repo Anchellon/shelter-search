@@ -12,9 +12,20 @@ import { groupLabel } from "@/shared/utils/groupLabel";
 import MSO from "@/shared/components/MSO";
 import RationaleCard from "@/shared/components/RationaleCard";
 import type { Service } from "@/app/store/slices/chatSlice";
-import { starReferral, fetchServicesBatch } from "@/services/api";
+import { starReferral, fetchServicesBatch, saveService, unsaveService } from "@/services/api";
 
-function ServiceCard({ service }: { service: Service }) {
+function ServiceCard({
+  service,
+  saved,
+  saving,
+  onBookmark,
+}: {
+  service: Service;
+  saved: boolean;
+  saving: boolean;
+  onBookmark: () => void;
+}) {
+  const [hoveringBookmark, setHoveringBookmark] = useState(false);
   const address = [service.address_1, service.city, service.state_province]
     .filter(Boolean)
     .join(", ");
@@ -64,10 +75,21 @@ function ServiceCard({ service }: { service: Service }) {
           View Details
         </a>
         <button
-          aria-label={`Bookmark ${service.name}`}
-          className="w-9 h-9 border border-grey-2 rounded flex items-center justify-center text-grey-5 hover:bg-grey-2 transition-colors"
+          onClick={onBookmark}
+          disabled={saving}
+          onMouseEnter={() => setHoveringBookmark(true)}
+          onMouseLeave={() => setHoveringBookmark(false)}
+          aria-label={saved ? `Unsave ${service.name}` : `Save ${service.name}`}
+          className={[
+            "w-9 h-9 rounded flex items-center justify-center transition-colors disabled:opacity-50",
+            saved
+              ? hoveringBookmark
+                ? "bg-danger-bg text-danger-text"
+                : "bg-yellow-400 text-white"
+              : "border border-grey-2 text-grey-5 hover:text-yellow-500 hover:bg-yellow-50",
+          ].join(" ")}
         >
-          <MSO icon="bookmark" size={16} />
+          <MSO icon={saved ? (hoveringBookmark ? "bookmark_remove" : "bookmark") : "bookmark_add"} size={16} />
         </button>
       </div>
     </div>
@@ -136,6 +158,26 @@ export default function ResultsPane({ onSaveClick }: { onSaveClick: () => void }
   const { fetchServicesPage } = useChat();
   const [saving, setSaving] = useState(false);
   const [hoveringBookmark, setHoveringBookmark] = useState(false);
+  const [savedIds, setSavedIds] = useState<Set<number>>(new Set());
+  const [savingIds, setSavingIds] = useState<Set<number>>(new Set());
+
+  async function handleBookmark(serviceId: number) {
+    const isSaved = savedIds.has(serviceId);
+    setSavingIds((prev) => new Set(prev).add(serviceId));
+    try {
+      if (isSaved) {
+        await unsaveService(serviceId);
+        setSavedIds((prev) => { const n = new Set(prev); n.delete(serviceId); return n; });
+      } else {
+        await saveService(serviceId);
+        setSavedIds((prev) => new Set(prev).add(serviceId));
+      }
+    } catch {
+      // no-op
+    } finally {
+      setSavingIds((prev) => { const n = new Set(prev); n.delete(serviceId); return n; });
+    }
+  }
   const [printServices, setPrintServices] = useState<Service[] | null>(null);
 
   useEffect(() => {
@@ -266,7 +308,13 @@ export default function ResultsPane({ onSaveClick }: { onSaveClick: () => void }
 
         <div className="flex flex-col gap-3">
           {pageServices.map((svc) => (
-            <ServiceCard key={svc.service_id} service={svc} />
+            <ServiceCard
+              key={svc.service_id}
+              service={svc}
+              saved={savedIds.has(svc.service_id)}
+              saving={savingIds.has(svc.service_id)}
+              onBookmark={() => handleBookmark(svc.service_id)}
+            />
           ))}
         </div>
 

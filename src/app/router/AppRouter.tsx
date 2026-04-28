@@ -7,6 +7,7 @@ import LandingPage from "@/features/landing/LandingPage";
 import ChatPage from "@/features/chat/ChatPage";
 import ReferralsPage from "@/features/referrals/ReferralsPage";
 import RecentsPage from "@/features/recents/RecentsPage";
+import SavedServicesPage from "@/features/savedServices/SavedServicesPage";
 import AuthModal from "@/shared/components/AuthModal";
 import LoggedOutPage from "@/features/auth/LoggedOutPage";
 
@@ -29,6 +30,7 @@ export default function AppRouter() {
         <Route path={ROUTES.CHAT} element={<ChatPage />} />
         <Route path={ROUTES.REFERRALS} element={<ReferralsPage />} />
         <Route path={ROUTES.RECENTS} element={<RecentsPage />} />
+        <Route path={ROUTES.SAVED_SERVICES} element={<SavedServicesPage />} />
         <Route path={ROUTES.LOGGED_OUT} element={<LoggedOutPage />} />
       </Routes>
     </BrowserRouter>

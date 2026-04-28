@@ -183,6 +183,17 @@ export default function Sidebar() {
               Referrals
             </button>
             <button
+              onClick={() => { navigate(ROUTES.SAVED_SERVICES); dispatch(setSidebarOpen(false)); }}
+              className={["w-full flex items-center gap-2.5 px-2.5 py-2 rounded-sm text-sm transition-colors",
+                location.pathname === ROUTES.SAVED_SERVICES
+                  ? "bg-brand-verylight text-brand font-semibold"
+                  : "text-grey-9 hover:bg-grey-2",
+              ].join(" ")}
+            >
+              <MSO icon="star" size={22} className="text-yellow-400" fill style={{ WebkitTextStroke: "0.8px #a16207" }} />
+              Saved Services
+            </button>
+            <button
               onClick={() => { navigate(ROUTES.RECENTS); dispatch(setSidebarOpen(false)); }}
               className={["w-full flex items-center gap-2.5 px-2.5 py-2 rounded-sm text-sm transition-colors",
                 location.pathname === ROUTES.RECENTS
@@ -290,6 +301,9 @@ export default function Sidebar() {
         </button>
         <button onClick={() => navigate(ROUTES.REFERRALS)} title="Referrals" aria-label="Referrals" className={iconBtn}>
           <MSO icon="bookmark" />
+        </button>
+        <button onClick={() => navigate(ROUTES.SAVED_SERVICES)} title="Saved Services" aria-label="Saved Services" className={iconBtn}>
+          <MSO icon="star" size={22} className="text-yellow-400" fill style={{ WebkitTextStroke: "0.8px #a16207" }} />
         </button>
         <button onClick={() => navigate(ROUTES.RECENTS)} title="Chats" aria-label="Chats" className={iconBtn}>
           <MSO icon="chat_bubble" />

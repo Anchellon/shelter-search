@@ -268,6 +268,50 @@ export async function deleteReferral(id: string): Promise<void> {
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
 }
 
+// ---------- Saved Services ----------
+
+export interface SavedService {
+  service_id: number;
+  name: string;
+  long_description: string | null;
+  resource_id: number;
+  org_name: string;
+  address_1: string | null;
+  city: string | null;
+  state_province: string | null;
+  postal_code: string | null;
+  latitude: number | null;
+  longitude: number | null;
+  phone: string | null;
+  saved_at: string;
+}
+
+export async function listSavedServices(): Promise<SavedService[]> {
+  const res = await fetch(`${BASE_URL}/saved-services`, {
+    headers: await authHeaders(),
+  });
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  const data = await res.json();
+  return data.services;
+}
+
+export async function saveService(serviceId: number): Promise<void> {
+  const res = await fetch(`${BASE_URL}/saved-services`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...(await authHeaders()) },
+    body: JSON.stringify({ service_id: serviceId }),
+  });
+  if (!res.ok && res.status !== 409) throw new Error(`HTTP ${res.status}`);
+}
+
+export async function unsaveService(serviceId: number): Promise<void> {
+  const res = await fetch(`${BASE_URL}/saved-services/${serviceId}`, {
+    method: "DELETE",
+    headers: await authHeaders(),
+  });
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+}
+
 // ---------- Conversations ----------
 
 export async function listConversations(opts: {
