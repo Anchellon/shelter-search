@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { useAppDispatch, useAppSelector } from "@/app/store/hooks";
 import {
   closeResultsPanel,
@@ -11,7 +12,7 @@ import { groupLabel } from "@/shared/utils/groupLabel";
 import MSO from "@/shared/components/MSO";
 import RationaleCard from "@/shared/components/RationaleCard";
 import type { Service } from "@/app/store/slices/chatSlice";
-import { starReferral } from "@/services/api";
+import { starReferral, fetchServicesBatch } from "@/services/api";
 
 function ServiceCard({ service }: { service: Service }) {
   const address = [service.address_1, service.city, service.state_province]
@@ -135,6 +136,28 @@ export default function ResultsPane({ onSaveClick }: { onSaveClick: () => void }
   const { fetchServicesPage } = useChat();
   const [saving, setSaving] = useState(false);
   const [hoveringBookmark, setHoveringBookmark] = useState(false);
+  const [printServices, setPrintServices] = useState<Service[] | null>(null);
+
+  useEffect(() => {
+    if (printServices === null) return;
+    const id = setTimeout(() => {
+      document.body.classList.add("printing");
+      window.print();
+      document.body.classList.remove("printing");
+      setPrintServices(null);
+    }, 50);
+    return () => clearTimeout(id);
+  }, [printServices]);
+
+  async function handlePrint() {
+    if (serviceIds.length === 0) return;
+    try {
+      const services = await fetchServicesBatch(serviceIds);
+      setPrintServices(services);
+    } catch {
+      // no-op
+    }
+  }
 
   // Compound key: referralId_groupId
   const activeKey = activeReferralId && activeGroupId != null
@@ -254,6 +277,7 @@ export default function ResultsPane({ onSaveClick }: { onSaveClick: () => void }
       <div className="px-5 py-3 border-t border-grey-2 flex items-center gap-2 flex-shrink-0">
         <button
           aria-label="Print results"
+          onClick={handlePrint}
           className="flex items-center gap-1.5 text-[12px] text-grey-6 hover:text-grey-9 px-2 py-1.5 rounded hover:bg-grey-2 transition-colors"
         >
           <MSO icon="print" size={15} />
@@ -298,6 +322,42 @@ export default function ResultsPane({ onSaveClick }: { onSaveClick: () => void }
           </button>
         )}
       </div>
+
+      {/* Print portal — fetches all results and renders as direct child of body so only it shows during print */}
+      {printServices !== null && createPortal(
+        <div className="print-portal">
+          <h1 style={{ fontSize: 20, fontWeight: 700, marginBottom: 4 }}>Matched Services</h1>
+          <p style={{ fontSize: 12, color: "#888", marginBottom: 20 }}>
+            {printServices.length} result{printServices.length !== 1 ? "s" : ""} found
+          </p>
+
+          {rationale && (
+            <p style={{ fontSize: 12, fontStyle: "italic", marginBottom: 20, padding: "10px 12px", background: "#f0f4ff", borderLeft: "3px solid #6b7de8", borderRadius: 2 }}>
+              {rationale}
+            </p>
+          )}
+
+          <div>
+            {printServices.map((svc) => {
+              const address = [svc.address_1, svc.city, svc.state_province].filter(Boolean).join(", ");
+              return (
+                <div key={svc.service_id} style={{ borderBottom: "1px solid #eee", paddingBottom: 16, marginBottom: 16 }}>
+                  <div style={{ fontWeight: 700, fontSize: 14 }}>{svc.name}</div>
+                  {svc.org_name && svc.org_name !== svc.name && (
+                    <div style={{ fontSize: 11, color: "#888" }}>{svc.org_name}</div>
+                  )}
+                  {svc.long_description && (
+                    <p style={{ fontSize: 12, color: "#555", marginTop: 4, lineHeight: 1.5 }}>{svc.long_description}</p>
+                  )}
+                  {address && <div style={{ fontSize: 11, color: "#888", marginTop: 4 }}>{address}</div>}
+                  {svc.phone && <div style={{ fontSize: 11, color: "#888" }}>{svc.phone}</div>}
+                </div>
+              );
+            })}
+          </div>
+        </div>,
+        document.body
+      )}
     </div>
   );
 }
