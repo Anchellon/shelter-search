@@ -1,14 +1,37 @@
+import { useState } from "react";
 import type { Service } from "@/app/store/slices/chatSlice";
 import MSO from "@/shared/components/MSO";
+import { saveService, unsaveService } from "@/services/api";
 
 interface Props {
   service: Service;
 }
 
 export default function ServiceCard({ service }: Props) {
+  const [saved, setSaved] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [hovering, setHovering] = useState(false);
+
   const address = [service.address_1, service.city, service.state_province]
     .filter(Boolean)
     .join(", ");
+
+  async function handleBookmark() {
+    setSaving(true);
+    try {
+      if (saved) {
+        await unsaveService(service.service_id);
+        setSaved(false);
+      } else {
+        await saveService(service.service_id);
+        setSaved(true);
+      }
+    } catch {
+      // no-op
+    } finally {
+      setSaving(false);
+    }
+  }
 
   return (
     <div className="border border-grey-2 rounded p-4 bg-white transition-[box-shadow,border-color] duration-150 hover:border-brand-light hover:shadow-card">
@@ -52,8 +75,22 @@ export default function ServiceCard({ service }: Props) {
         >
           View Details
         </a>
-        <button className="w-[34px] h-[34px] border border-grey-2 rounded bg-white text-grey-5 flex items-center justify-center hover:bg-grey-1 hover:text-grey-9 transition-colors flex-shrink-0">
-          <MSO icon="bookmark" size={16} />
+        <button
+          onClick={handleBookmark}
+          disabled={saving}
+          onMouseEnter={() => setHovering(true)}
+          onMouseLeave={() => setHovering(false)}
+          aria-label={saved ? `Unsave ${service.name}` : `Save ${service.name}`}
+          className={[
+            "w-[34px] h-[34px] rounded flex items-center justify-center transition-colors flex-shrink-0 disabled:opacity-50",
+            saved
+              ? hovering
+                ? "bg-danger-bg text-danger-text"
+                : "bg-yellow-400 text-white"
+              : "border border-grey-2 text-grey-5 hover:text-yellow-500 hover:bg-yellow-50",
+          ].join(" ")}
+        >
+          <MSO icon={saved ? (hovering ? "bookmark_remove" : "bookmark") : "bookmark_add"} size={16} />
         </button>
       </div>
     </div>
