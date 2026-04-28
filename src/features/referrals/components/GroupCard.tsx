@@ -1,4 +1,5 @@
 import type { ReferralGroup } from "@/services/api";
+import { mapCategories } from "@/shared/utils/categoryLabels";
 import MSO from "@/shared/components/MSO";
 
 export const GROUP_TAGS = [
@@ -16,6 +17,8 @@ interface Props {
 
 export default function GroupCard({ group, index, onClick }: Props) {
   const tag = GROUP_TAGS[index % 4];
+  const categoryLabels = mapCategories(group.categories ?? []);
+  const resourceLabel = categoryLabels.length > 0 ? categoryLabels.join(" · ") : group.what;
 
   return (
     <div
@@ -28,7 +31,7 @@ export default function GroupCard({ group, index, onClick }: Props) {
         Group {tag.label}
       </span>
 
-      <div className="text-[13px] font-bold text-grey-9 leading-snug">{group.what}</div>
+      <div className="text-[13px] font-bold text-grey-9 leading-snug">{resourceLabel}</div>
 
       <div className="flex flex-col gap-0.5">
         {group.who && (

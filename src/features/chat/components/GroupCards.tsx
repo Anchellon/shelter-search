@@ -2,6 +2,7 @@ import { useAppDispatch, useAppSelector } from "@/app/store/hooks";
 import { setActiveGroupId, setActiveReferralId, openResultsPanel } from "@/app/store/slices/uiSlice";
 import { setCurrentReferral } from "@/app/store/slices/chatSlice";
 import { groupLabel } from "@/shared/utils/groupLabel";
+import { mapCategories } from "@/shared/utils/categoryLabels";
 import GroupTag, { TAG_VARIANTS } from "@/shared/components/GroupTag";
 import type { Group } from "@/app/store/slices/chatSlice";
 
@@ -31,6 +32,8 @@ export default function GroupCards({ groups, referralId }: Props) {
           && activeGroupId === group.group_id
           && (referralId ? activeReferralId === referralId : !activeReferralId);
         const label = groupLabel(group.group_id);
+        const categoryLabels = mapCategories(group.categories ?? []);
+        const resourceLabel = categoryLabels.length > 0 ? categoryLabels.join(" · ") : group.what;
 
         return (
           <button
@@ -55,7 +58,7 @@ export default function GroupCards({ groups, referralId }: Props) {
               label={`Group ${label}`}
               className="text-[9px] px-2 py-0.5 mb-2"
             />
-            <div className="text-[13px] font-bold text-grey-9 leading-tight">{group.what}</div>
+            <div className="text-[13px] font-bold text-grey-9 leading-tight">{resourceLabel}</div>
             <div className="text-[11px] text-grey-5 mt-1">{group.where}</div>
           </button>
         );

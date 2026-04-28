@@ -2,17 +2,44 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { useAppSelector } from "@/app/store/hooks";
 import { useChat } from "../hooks/useChat";
 import { groupLabel } from "@/shared/utils/groupLabel";
+import { CATEGORY_LABELS, mapCategories } from "@/shared/utils/categoryLabels";
 import MSO from "@/shared/components/MSO";
 import type { IntakeRequest, IntakeStep, Group } from "@/app/store/slices/chatSlice";
 
-function flatOptions(options: IntakeStep["options"]): string[] {
-  if (Array.isArray(options)) return options;
-  return Object.values(options).flat();
+interface VirtualStep {
+  dimension: string;
+  question: string;
+  sectionLabel: string | null;
+  type: "multi_select" | "single_select";
+  options: string[];
 }
 
-function groupedOptions(options: IntakeStep["options"]): { label: string; values: string[] }[] | null {
-  if (Array.isArray(options)) return null;
-  return Object.entries(options).map(([label, values]) => ({ label, values }));
+const DIMENSION_LABELS: Record<string, string> = {
+  age: "Age",
+  housing: "Housing Status",
+  gender: "Gender",
+  family_status: "Family Status",
+  employment: "Employment Status",
+  financial: "Financial Status",
+  health: "Health Concerns",
+  ethnicity: "Ethnicity",
+  immigration: "Immigration Status",
+  other: "Other",
+};
+
+function expandSteps(steps: IntakeStep[]): VirtualStep[] {
+  return steps.flatMap((step): VirtualStep[] => {
+    if (Array.isArray(step.options)) {
+      return [{ dimension: step.dimension, question: step.question, sectionLabel: null, type: step.type, options: step.options }];
+    }
+    return Object.entries(step.options).map(([label, values]) => ({
+      dimension: step.dimension,
+      question: step.question,
+      sectionLabel: DIMENSION_LABELS[label] ?? label,
+      type: step.type,
+      options: values,
+    }));
+  });
 }
 
 // Inner component — always mounted with a key so it starts fresh per group.
@@ -36,31 +63,37 @@ function IntakeCardContent({
   const listRef = useRef<HTMLUListElement>(null);
 
   const { group_label, steps, group_id } = intakeRequest;
-  const step = steps[stepIndex];
-  const isMulti = step.type === "multi_select";
-  const isSingle = step.type === "single_select";
-  const currentAnswers = answers[step.dimension] ?? [];
-  const progressPct = ((stepIndex + 1) / steps.length) * 100;
-  const isLastStep = stepIndex === steps.length - 1;
+  const identifiedGroup = groups.find(g => g.group_id === group_id);
+  const identifiedLabels = mapCategories(identifiedGroup?.categories ?? []);
+  const virtualSteps = expandSteps(steps);
+  const vStep = virtualSteps[stepIndex];
+  const isMulti = vStep.type === "multi_select";
+  const isSingle = vStep.type === "single_select";
 
-  const flat = flatOptions(step.options);
-  const grouped = groupedOptions(step.options);
-  const totalNavigable = flat.length + 1; // options + "something else" row
-  const SE_INDEX = flat.length;
+  // Only the options belonging to this virtual step's option set count as "current"
+  const currentAnswers = (answers[vStep.dimension] ?? []).filter((v) => vStep.options.includes(v));
+  const progressPct = ((stepIndex + 1) / virtualSteps.length) * 100;
+  const isLastStep = stepIndex === virtualSteps.length - 1;
 
-  const hasSelection =
-    (answers[step.dimension] ?? []).length > 0 || (seExpanded && !!seValue.trim());
+  const totalNavigable = vStep.options.length + 1; // options + "something else" row
+  const SE_INDEX = vStep.options.length;
+
+  const hasSelection = currentAnswers.length > 0 || (seExpanded && !!seValue.trim());
 
   const toggleOption = useCallback((value: string) => {
-    const prev = answers[step.dimension] ?? [];
-    const next = isMulti
-      ? prev.includes(value) ? prev.filter((v) => v !== value) : [...prev, value]
-      : [value];
-    setAnswers({ ...answers, [step.dimension]: next });
-  }, [answers, step.dimension, isMulti]);
+    const prev = answers[vStep.dimension] ?? [];
+    let next: string[];
+    if (isMulti) {
+      next = prev.includes(value) ? prev.filter((v) => v !== value) : [...prev, value];
+    } else {
+      // single-select: replace only options from this virtual step's set, keep others
+      next = [...prev.filter((v) => !vStep.options.includes(v)), value];
+    }
+    setAnswers({ ...answers, [vStep.dimension]: next });
+  }, [answers, vStep, isMulti]);
 
   const advanceStep = useCallback((allAnswers: Record<string, string[]>) => {
-    if (stepIndex < steps.length - 1) {
+    if (stepIndex < virtualSteps.length - 1) {
       setAnswers(allAnswers);
       setStepIndex(stepIndex + 1);
       setSeExpanded(false);
@@ -69,15 +102,15 @@ function IntakeCardContent({
     } else {
       onSubmit(allAnswers);
     }
-  }, [stepIndex, steps.length, onSubmit]);
+  }, [stepIndex, virtualSteps.length, onSubmit]);
 
   const handleNext = useCallback(() => {
     const allAnswers = { ...answers };
-    if (seExpanded && seValue.trim() && !allAnswers[step.dimension]?.includes(seValue.trim())) {
-      allAnswers[step.dimension] = [...(allAnswers[step.dimension] ?? []), seValue.trim()];
+    if (seExpanded && seValue.trim() && !allAnswers[vStep.dimension]?.includes(seValue.trim())) {
+      allAnswers[vStep.dimension] = [...(allAnswers[vStep.dimension] ?? []), seValue.trim()];
     }
     advanceStep(allAnswers);
-  }, [answers, seExpanded, seValue, step.dimension, advanceStep]);
+  }, [answers, seExpanded, seValue, vStep.dimension, advanceStep]);
 
   const handleSkip = useCallback(() => {
     advanceStep(answers);
@@ -86,13 +119,11 @@ function IntakeCardContent({
   // Keyboard: ↑↓ navigate, Enter/Space select, ⌘Enter submit, Esc cancel
   useEffect(() => {
     function onKeyDown(e: KeyboardEvent) {
-      // ⌘Enter / Ctrl+Enter — submit from anywhere
       if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
         e.preventDefault();
         if (hasSelection) handleNext();
         return;
       }
-      // Let the browser handle typing inside the "something else" input
       if (seExpanded && document.activeElement?.tagName === "INPUT") return;
 
       switch (e.key) {
@@ -127,7 +158,7 @@ function IntakeCardContent({
           if (focusedIndex === SE_INDEX) {
             setSeExpanded(true);
           } else {
-            toggleOption(flat[focusedIndex]);
+            toggleOption(vStep.options[focusedIndex]);
           }
           break;
         }
@@ -135,7 +166,7 @@ function IntakeCardContent({
     }
     document.addEventListener("keydown", onKeyDown);
     return () => document.removeEventListener("keydown", onKeyDown);
-  }, [focusedIndex, hasSelection, seExpanded, flat, totalNavigable, SE_INDEX, handleNext, onCancel, toggleOption]);
+  }, [focusedIndex, hasSelection, seExpanded, vStep.options, totalNavigable, SE_INDEX, handleNext, onCancel, toggleOption]);
 
   const currentGroupIndex = groups.findIndex((g) => g.group_id === group_id);
   const stepHeadingId = `intake-step-${group_id}-${stepIndex}`;
@@ -151,7 +182,7 @@ function IntakeCardContent({
           role="progressbar"
           aria-valuenow={stepIndex + 1}
           aria-valuemin={1}
-          aria-valuemax={steps.length}
+          aria-valuemax={virtualSteps.length}
           aria-label="Step progress"
         >
           <div
@@ -166,13 +197,27 @@ function IntakeCardContent({
             <span className="inline-block text-[10px] font-bold uppercase tracking-[0.04em] px-2 py-0.5 rounded-full bg-brand text-white mb-1.5 leading-relaxed">
               {group_label}
             </span>
+            {identifiedLabels.length > 0 && (
+              <div className="flex items-center gap-1 flex-wrap mb-1.5">
+                {identifiedLabels.map(label => (
+                  <span key={label} className="inline-block text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-brand-verylight text-brand border border-brand-light leading-relaxed">
+                    {label}
+                  </span>
+                ))}
+              </div>
+            )}
             <div id={stepHeadingId} className="text-[13px] font-semibold text-grey-9 leading-snug">
-              {step.question}
+              {vStep.question}
             </div>
+            {vStep.sectionLabel && (
+              <div className="text-[11px] font-semibold uppercase tracking-[0.06em] text-grey-5 mt-0.5">
+                {vStep.sectionLabel}
+              </div>
+            )}
           </div>
           <div className="flex items-center gap-1.5 flex-shrink-0 pt-0.5">
             <span className="text-[11px] text-grey-5 whitespace-nowrap">
-              Step {stepIndex + 1} of {steps.length}
+              Step {stepIndex + 1} of {virtualSteps.length}
             </span>
             <button
               onClick={onCancel}
@@ -191,26 +236,11 @@ function IntakeCardContent({
           aria-labelledby={stepHeadingId}
           className="max-h-[240px] overflow-y-auto [&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar-thumb]:bg-grey-4 [&::-webkit-scrollbar-thumb]:rounded"
         >
-          {(grouped
-            ? grouped.flatMap(({ label, values }) => [
-                { type: "heading" as const, label },
-                ...values.map((v) => ({ type: "option" as const, value: v })),
-              ])
-            : flat.map((v) => ({ type: "option" as const, value: v }))
-          ).map((item, idx) => {
-            if (item.type === "heading") {
-              return (
-                <li key={`h_${item.label}`} className="px-4 pt-2 pb-0.5 text-[10px] font-bold uppercase tracking-[0.06em] text-grey-5">
-                  {item.label}
-                </li>
-              );
-            }
-            const { value } = item;
+          {vStep.options.map((value: string, navIndex: number) => {
             const checked = currentAnswers.includes(value);
-            const navIndex = flat.indexOf(value);
             const isFocused = focusedIndex === navIndex;
             return (
-              <li key={`${idx}_${value}`}>
+              <li key={`${navIndex}_${value}`}>
                 <button
                   data-nav-index={navIndex}
                   onClick={() => { toggleOption(value); setFocusedIndex(navIndex); }}
@@ -247,7 +277,7 @@ function IntakeCardContent({
                       {checked && <span className="w-[7px] h-[7px] rounded-full bg-white" />}
                     </span>
                   )}
-                  <span className="text-[13px] text-grey-9 flex-1">{value}</span>
+                  <span className="text-[13px] text-grey-9 flex-1">{CATEGORY_LABELS[value] ?? value}</span>
                 </button>
               </li>
             );
