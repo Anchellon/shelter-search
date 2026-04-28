@@ -90,7 +90,7 @@ export default function RenameCollectionModal({ referral, saving, onConfirm, onC
               {referral.groups.map((group, i) => (
                 <div key={group.group_id} className="flex items-start gap-3">
                   <GroupTag
-                    tag={TAG_VARIANTS[i % 4]}
+                    tag={TAG_VARIANTS[i % TAG_VARIANTS.length]}
                     label={`Group ${String.fromCharCode(65 + i)}`}
                     className="text-[9px] px-2 py-0.5 mt-0.5 flex-shrink-0"
                   />

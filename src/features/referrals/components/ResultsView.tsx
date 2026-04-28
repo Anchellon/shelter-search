@@ -53,7 +53,7 @@ export default function ResultsView({ referral, activeGroupIndex, onGroupChange,
   const isOpen = !!referral;
   // Use summary group data immediately while detail loads
   const activeGroup = (detail ?? referral)?.groups[activeGroupIndex];
-  const activeTag = GROUP_TAGS[activeGroupIndex % 4];
+  const activeTag = GROUP_TAGS[activeGroupIndex % GROUP_TAGS.length];
 
   return (
     <div
@@ -103,7 +103,7 @@ export default function ResultsView({ referral, activeGroupIndex, onGroupChange,
       {referral && referral.groups.length > 1 && (
         <div className="flex items-center gap-1.5 px-5 py-2.5 border-b border-grey-2 flex-shrink-0 flex-wrap bg-white">
           {referral.groups.map((g, i) => {
-            const t = GROUP_TAGS[i % 4];
+            const t = GROUP_TAGS[i % GROUP_TAGS.length];
             return (
               <button
                 key={g.group_id}

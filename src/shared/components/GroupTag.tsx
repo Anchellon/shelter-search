@@ -1,12 +1,16 @@
-export type TagVariant = "a" | "b" | "c" | "d";
+export type TagVariant = "a" | "b" | "c" | "d" | "e" | "f" | "g" | "h";
 
-export const TAG_VARIANTS: TagVariant[] = ["a", "b", "c", "d"];
+export const TAG_VARIANTS: TagVariant[] = ["a", "b", "c", "d", "e", "f", "g", "h"];
 
 const TAG_STYLES: Record<TagVariant, string> = {
   a: "bg-brand-verylight text-brand",
-  b: "bg-success-bg text-success-text",
+  b: "bg-orange-100 text-orange-700",
   c: "bg-danger-bg text-danger-text",
   d: "bg-warning-bg text-warning-text",
+  e: "bg-rose-100 text-rose-700",
+  f: "bg-indigo-100 text-indigo-700",
+  g: "bg-sky-100 text-sky-700",
+  h: "bg-emerald-100 text-emerald-700",
 };
 
 interface Props {

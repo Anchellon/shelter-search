@@ -6,6 +6,7 @@ import { loadConversation } from "@/app/store/slices/chatSlice";
 import { closeResultsPanel } from "@/app/store/slices/uiSlice";
 import Sidebar from "@/shared/components/Sidebar";
 import MSO from "@/shared/components/MSO";
+import MobileHeader from "@/shared/components/MobileHeader";
 import { ROUTES } from "@/app/router/routes";
 import { listConversations, getConversation } from "@/services/api";
 import type { ConversationSummary } from "@/services/api";
@@ -90,6 +91,7 @@ export default function RecentsPage() {
       <Sidebar />
 
       <main className="flex-1 flex flex-col overflow-hidden">
+        <MobileHeader />
         {/* Header */}
         <div className="px-10 pt-12 pb-8 flex-shrink-0">
           <div className="max-w-[860px] mx-auto w-full">

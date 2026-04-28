@@ -8,9 +8,13 @@ import type { Group } from "@/app/store/slices/chatSlice";
 
 const CARD_ACTIVE_COLORS = [
   "border-brand bg-brand-verylight",
-  "border-success-border bg-success-bg",
+  "border-orange-300 bg-orange-50",
   "border-danger-border bg-danger-bg",
   "border-warning-border bg-warning-bg",
+  "border-rose-300 bg-rose-50",
+  "border-indigo-300 bg-indigo-50",
+  "border-sky-300 bg-sky-50",
+  "border-emerald-300 bg-emerald-50",
 ];
 
 interface Props {
@@ -60,6 +64,20 @@ export default function GroupCards({ groups, referralId }: Props) {
             />
             <div className="text-[13px] font-bold text-grey-9 leading-tight">{resourceLabel}</div>
             <div className="text-[11px] text-grey-5 mt-1">{group.where}</div>
+            {(categoryLabels.length > 0 || (group.eligibilities?.length ?? 0) > 0) && (
+              <div className="flex flex-wrap gap-1 mt-2">
+                {categoryLabels.map(l => (
+                  <span key={l} className="text-[9px] font-semibold px-1.5 py-0.5 rounded-full bg-purple-50 text-purple-700 border border-purple-200 leading-tight">
+                    {l}
+                  </span>
+                ))}
+                {(group.eligibilities ?? []).map(e => (
+                  <span key={e} className="text-[9px] font-semibold px-1.5 py-0.5 rounded-full bg-teal-50 text-teal-700 border border-teal-200 leading-tight">
+                    {e}
+                  </span>
+                ))}
+              </div>
+            )}
           </button>
         );
       })}

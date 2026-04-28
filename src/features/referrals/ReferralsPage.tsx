@@ -10,6 +10,7 @@ import ReferralCard from "./components/ReferralCard";
 import ResultsView from "./components/ResultsView";
 import ContextMenu from "./components/ContextMenu";
 import RenameCollectionModal from "./components/RenameCollectionModal";
+import MobileHeader from "@/shared/components/MobileHeader";
 
 export default function ReferralsPage() {
   const navigate = useNavigate();
@@ -87,6 +88,7 @@ export default function ReferralsPage() {
       <Sidebar />
 
       <main className="flex-1 flex flex-col overflow-hidden">
+        <MobileHeader />
         {/* Page header */}
         <div className="px-10 pt-12 pb-8 flex-shrink-0">
           <div className="max-w-[860px] mx-auto w-full">

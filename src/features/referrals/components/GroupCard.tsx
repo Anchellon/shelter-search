@@ -3,10 +3,14 @@ import { mapCategories } from "@/shared/utils/categoryLabels";
 import MSO from "@/shared/components/MSO";
 
 export const GROUP_TAGS = [
-  { label: "A", bg: "bg-brand-verylight", text: "text-brand", border: "border-brand-light" },
-  { label: "B", bg: "bg-success-bg", text: "text-success-text", border: "border-success-border" },
-  { label: "C", bg: "bg-danger-bg", text: "text-danger-text", border: "border-danger-border" },
-  { label: "D", bg: "bg-warning-bg", text: "text-warning-text", border: "border-warning-border" },
+  { label: "A", bg: "bg-brand-verylight", text: "text-brand",       border: "border-brand-light" },
+  { label: "B", bg: "bg-orange-100",      text: "text-orange-700",  border: "border-orange-300" },
+  { label: "C", bg: "bg-danger-bg",       text: "text-danger-text", border: "border-danger-border" },
+  { label: "D", bg: "bg-warning-bg",      text: "text-warning-text",border: "border-warning-border" },
+  { label: "E", bg: "bg-rose-100",        text: "text-rose-700",    border: "border-rose-300" },
+  { label: "F", bg: "bg-indigo-100",      text: "text-indigo-700",  border: "border-indigo-300" },
+  { label: "G", bg: "bg-sky-100",         text: "text-sky-700",     border: "border-sky-300" },
+  { label: "H", bg: "bg-emerald-100",     text: "text-emerald-700", border: "border-emerald-300" },
 ];
 
 interface Props {
@@ -16,7 +20,7 @@ interface Props {
 }
 
 export default function GroupCard({ group, index, onClick }: Props) {
-  const tag = GROUP_TAGS[index % 4];
+  const tag = GROUP_TAGS[index % GROUP_TAGS.length];
   const categoryLabels = mapCategories(group.categories ?? []);
   const resourceLabel = categoryLabels.length > 0 ? categoryLabels.join(" · ") : group.what;
 
@@ -32,6 +36,21 @@ export default function GroupCard({ group, index, onClick }: Props) {
       </span>
 
       <div className="text-[13px] font-bold text-grey-9 leading-snug">{resourceLabel}</div>
+
+      {(categoryLabels.length > 0 || (group.eligibilities?.length ?? 0) > 0) && (
+        <div className="flex flex-wrap gap-1">
+          {categoryLabels.map(l => (
+            <span key={l} className="text-[9px] font-semibold px-1.5 py-0.5 rounded-full bg-purple-50 text-purple-700 border border-purple-200 leading-tight">
+              {l}
+            </span>
+          ))}
+          {(group.eligibilities ?? []).map(e => (
+            <span key={e} className="text-[9px] font-semibold px-1.5 py-0.5 rounded-full bg-teal-50 text-teal-700 border border-teal-200 leading-tight">
+              {e}
+            </span>
+          ))}
+        </div>
+      )}
 
       <div className="flex flex-col gap-0.5">
         {group.who && (
