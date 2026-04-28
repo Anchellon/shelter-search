@@ -22,7 +22,9 @@ export default function SavedServicesPage() {
   const { isAuthenticated } = useAuth0();
 
   const [services, setServices] = useState<SavedService[]>([]);
+  const [hasMore, setHasMore] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [removing, setRemoving] = useState<Set<number>>(new Set());
 
@@ -31,10 +33,23 @@ export default function SavedServicesPage() {
     setLoading(true);
     setError(null);
     listSavedServices()
-      .then(setServices)
+      .then((data) => { setServices(data.services); setHasMore(data.has_more); })
       .catch(() => setError("Failed to load saved services."))
       .finally(() => setLoading(false));
   }, [isAuthenticated]);
+
+  async function handleLoadMore() {
+    setLoadingMore(true);
+    try {
+      const data = await listSavedServices({ offset: services.length });
+      setServices((prev) => [...prev, ...data.services]);
+      setHasMore(data.has_more);
+    } catch {
+      setError("Failed to load more.");
+    } finally {
+      setLoadingMore(false);
+    }
+  }
 
   async function handleRemove(e: React.MouseEvent, serviceId: number) {
     e.preventDefault();
@@ -157,6 +172,16 @@ export default function SavedServicesPage() {
                     );
                   })}
                 </div>
+
+                {hasMore && (
+                  <button
+                    onClick={handleLoadMore}
+                    disabled={loadingMore}
+                    className="w-full mt-4 py-2.5 border border-grey-3 rounded text-[13px] text-grey-7 hover:bg-grey-1 transition-colors disabled:opacity-50"
+                  >
+                    {loadingMore ? "Loading…" : "Show more"}
+                  </button>
+                )}
               </>
             )}
           </div>

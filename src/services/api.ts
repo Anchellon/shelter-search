@@ -286,13 +286,18 @@ export interface SavedService {
   saved_at: string;
 }
 
-export async function listSavedServices(): Promise<SavedService[]> {
-  const res = await fetch(`${BASE_URL}/saved-services`, {
+export async function listSavedServices(opts: {
+  limit?: number;
+  offset?: number;
+} = {}): Promise<{ services: SavedService[]; has_more: boolean }> {
+  const params = new URLSearchParams();
+  if (opts.limit) params.set("limit", String(opts.limit));
+  if (opts.offset) params.set("offset", String(opts.offset));
+  const res = await fetch(`${BASE_URL}/saved-services?${params}`, {
     headers: await authHeaders(),
   });
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
-  const data = await res.json();
-  return data.services;
+  return res.json();
 }
 
 export async function saveService(serviceId: number): Promise<void> {
