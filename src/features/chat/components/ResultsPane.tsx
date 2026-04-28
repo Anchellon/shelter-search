@@ -331,13 +331,6 @@ export default function ResultsPane({ onSaveClick }: { onSaveClick: () => void }
           <MSO icon="print" size={15} />
           Print
         </button>
-        <button
-          aria-label="Export results"
-          className="flex items-center gap-1.5 text-[12px] text-grey-6 hover:text-grey-9 px-2 py-1.5 rounded hover:bg-grey-2 transition-colors"
-        >
-          <MSO icon="download" size={15} />
-          Export
-        </button>
         <div className="flex-1" />
         {currentReferralId && (
           <button
