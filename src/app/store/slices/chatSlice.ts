@@ -247,21 +247,34 @@ const chatSlice = createSlice({
       // Pair by order: 1st referral → after 1st assistant message, etc.
       // Cards are not pre-selected — user clicks to activate.
       if (referrals && referrals.length > 0) {
+        // Collect indices of all assistant messages, then pair referrals from the
+        // end so the last referral lands after the last assistant message (not the first).
+        const assistantIndices: number[] = [];
+        for (let i = 0; i < messages.length; i++) {
+          if (messages[i].role === "assistant") assistantIndices.push(i);
+        }
+        const pairedCount = Math.min(referrals.length, assistantIndices.length);
+        const insertAfter = new Map<number, typeof referrals[number]>();
+        for (let i = 0; i < pairedCount; i++) {
+          insertAfter.set(
+            assistantIndices[assistantIndices.length - pairedCount + i],
+            referrals[referrals.length - pairedCount + i]
+          );
+        }
+
         const augmented: Message[] = [];
-        let refIdx = 0;
-        for (const msg of messages) {
-          augmented.push(msg);
-          if (msg.role === "assistant" && refIdx < referrals.length) {
-            const ref = referrals[refIdx];
+        for (let i = 0; i < messages.length; i++) {
+          augmented.push(messages[i]);
+          const ref = insertAfter.get(i);
+          if (ref) {
             augmented.push({
-              id: `referral_restored_${refIdx}`,
+              id: `referral_restored_${ref.id}`,
               role: "assistant",
               type: "referral",
               content: "",
               groups: ref.groups as Group[],
               referralId: ref.id,
             });
-            refIdx++;
           }
         }
         state.messages = augmented;
