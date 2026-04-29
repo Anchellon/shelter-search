@@ -1,28 +1,19 @@
-name: Deploy to S3 + CloudFront
+name: CD
 
 on:
   push:
-    branches:
-      - main
-      - staging
-  pull_request:
-    branches:
-      - main
-      - staging
+    branches: [main, staging]
 
 jobs:
-  build-and-deploy:
+  deploy:
     runs-on: ubuntu-latest
-
     environment: ${{ github.ref == 'refs/heads/main' && 'production' || 'staging' }}
-
     permissions:
       id-token: write
       contents: read
 
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
       - name: Setup Node
         uses: actions/setup-node@v4
@@ -42,14 +33,12 @@ jobs:
         run: npm run build
 
       - name: Configure AWS credentials
-        if: github.event_name == 'push'
         uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: ${{ secrets.AWS_DEPLOY_ROLE_ARN }}
           aws-region: us-east-1
 
       - name: Deploy to S3
-        if: github.event_name == 'push'
         run: |
           aws s3 sync dist/ s3://${{ secrets.S3_BUCKET }} \
             --delete \
@@ -60,7 +49,6 @@ jobs:
             --cache-control "no-cache, no-store, must-revalidate"
 
       - name: Invalidate CloudFront cache
-        if: github.event_name == 'push'
         run: |
           aws cloudfront create-invalidation \
             --distribution-id ${{ secrets.CLOUDFRONT_DISTRIBUTION_ID }} \
