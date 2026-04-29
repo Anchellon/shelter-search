@@ -112,9 +112,6 @@ export default function ResultsView({ referral, activeGroupIndex, onGroupChange,
           <button onClick={handlePrint} className="w-[30px] h-[30px] rounded flex items-center justify-center text-grey-5 hover:bg-grey-2 hover:text-grey-9 transition-colors">
             <MSO icon="print" size={20} />
           </button>
-          <button className="w-[30px] h-[30px] rounded flex items-center justify-center text-grey-5 hover:bg-grey-2 hover:text-grey-9 transition-colors">
-            <MSO icon="download" size={20} />
-          </button>
         </div>
       </div>
 
@@ -190,10 +187,6 @@ export default function ResultsView({ referral, activeGroupIndex, onGroupChange,
         <button onClick={handlePrint} className="flex items-center justify-center gap-1.5 px-4 py-2.5 bg-white text-grey-9 border border-grey-2 rounded text-[12px] font-semibold font-[inherit] cursor-pointer hover:bg-grey-1 transition-colors">
           <MSO icon="print" size={15} />
           Print
-        </button>
-        <button className="flex items-center justify-center gap-1.5 px-4 py-2.5 bg-white text-grey-9 border border-grey-2 rounded text-[12px] font-semibold font-[inherit] cursor-pointer hover:bg-grey-1 transition-colors">
-          <MSO icon="download" size={15} />
-          Export
         </button>
       </div>
 
