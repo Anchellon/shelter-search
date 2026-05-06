@@ -256,48 +256,13 @@ const chatSlice = createSlice({
 
     // --- Load saved conversation ---
     loadConversation(state, action: PayloadAction<ConversationSnapshot>) {
-      const { id, messages, groups, formatted, referrals } = action.payload;
+      const { id, messages, groups, referrals } = action.payload;
       state.conversationId = id;
       state.groups = groups;
 
-      // Insert a "referral" message after each corresponding assistant text message.
-      // Pair by order: 1st referral → after 1st assistant message, etc.
-      // Cards are not pre-selected — user clicks to activate.
-      if (referrals && referrals.length > 0) {
-        // Collect indices of all assistant messages, then pair referrals from the
-        // end so the last referral lands after the last assistant message (not the first).
-        const assistantIndices: number[] = [];
-        for (let i = 0; i < messages.length; i++) {
-          if (messages[i].role === "assistant") assistantIndices.push(i);
-        }
-        const pairedCount = Math.min(referrals.length, assistantIndices.length);
-        const insertAfter = new Map<number, typeof referrals[number]>();
-        for (let i = 0; i < pairedCount; i++) {
-          insertAfter.set(
-            assistantIndices[assistantIndices.length - pairedCount + i],
-            referrals[referrals.length - pairedCount + i]
-          );
-        }
-
-        const augmented: Message[] = [];
-        for (let i = 0; i < messages.length; i++) {
-          augmented.push(messages[i]);
-          const ref = insertAfter.get(i);
-          if (ref) {
-            augmented.push({
-              id: `referral_restored_${ref.id}`,
-              role: "assistant",
-              type: "referral",
-              content: "",
-              groups: ref.groups as Group[],
-              referralId: ref.id,
-            });
-          }
-        }
-        state.messages = augmented;
-      } else {
-        state.messages = messages;
-      }
+      // Backend now inlines referral entries in the correct position within the
+      // message list — use it directly.
+      state.messages = messages;
 
       // Populate groupResults from each referral's group data
       state.groupResults = {};
@@ -308,23 +273,6 @@ const chatSlice = createSlice({
             state.groupResults[`${ref.id}_${group.group_id}`] = {
               rationale: (group as { rationale?: string | null }).rationale ?? "",
               serviceIds: sids,
-              currentPage: 1,
-              pageSize: 10,
-            };
-          }
-        }
-      }
-
-      // Fallback: use snapshot.formatted for the last referral in case service_ids
-      // were not included in the referral groups (list vs detail response shapes)
-      if (referrals && referrals.length > 0 && formatted) {
-        const lastRef = referrals[referrals.length - 1];
-        for (const [gid, data] of Object.entries(formatted)) {
-          const key = `${lastRef.id}_${gid}`;
-          if (!state.groupResults[key]) {
-            state.groupResults[key] = {
-              rationale: data.rationale,
-              serviceIds: data.service_ids,
               currentPage: 1,
               pageSize: 10,
             };
