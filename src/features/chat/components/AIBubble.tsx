@@ -1,3 +1,5 @@
+import ReactMarkdown from "react-markdown";
+
 interface Props {
   content: string;
 }
@@ -15,7 +17,17 @@ export default function AIBubble({ content }: Props) {
     <div className="flex gap-2.5 items-start">
       <AIAvatar />
       <div className="bg-grey-1 border border-grey-2 rounded-[2px_12px_12px_12px] px-4 py-3 max-w-[85%] text-sm text-grey-9 leading-relaxed">
-        {content}
+        <ReactMarkdown
+          components={{
+            p: ({ children }) => <p className="mb-2 last:mb-0">{children}</p>,
+            ul: ({ children }) => <ul className="list-disc pl-4 mb-2 space-y-1">{children}</ul>,
+            ol: ({ children }) => <ol className="list-decimal pl-4 mb-2 space-y-1">{children}</ol>,
+            li: ({ children }) => <li>{children}</li>,
+            strong: ({ children }) => <strong className="font-semibold">{children}</strong>,
+          }}
+        >
+          {content}
+        </ReactMarkdown>
       </div>
     </div>
   );
