@@ -3,6 +3,20 @@ import type { PayloadAction } from "@reduxjs/toolkit";
 
 // ---------- Domain types (mirror the backend's NavigatorState) ----------
 
+export interface ClientContext {
+  age?: string | null;
+  housing?: string | null;
+  gender?: string | null;
+  family_status?: string | null;
+  employment?: string | null;
+  financial?: string | null;
+  health?: string | null;
+  ethnicity?: string | null;
+  immigration?: string | null;
+  language?: string | null;
+  other?: string | null;
+}
+
 export interface Group {
   group_id: number;
   what: string;
@@ -67,6 +81,7 @@ export interface ConversationSnapshot {
   groups: Group[];
   formatted: Record<string, { rationale: string; service_ids: number[] }>;
   referrals: import("@/services/api").ReferralSummary[];
+  client_context?: ClientContext | null;
 }
 
 // ---------- Per-group results with pagination ----------
@@ -93,6 +108,7 @@ export interface ChatState {
   currentReferralId: string | null;   // id of the currently-active referral (for Save button)
   currentReferralSaved: boolean;      // true once user has starred it
   referralSavedMap: Record<string, boolean>;  // persists saved state across card clicks
+  clientContext: ClientContext | null;
 }
 
 const initialState: ChatState = {
@@ -108,6 +124,7 @@ const initialState: ChatState = {
   currentReferralId: null,
   currentReferralSaved: false,
   referralSavedMap: {},
+  clientContext: null,
 };
 
 // ---------- Slice ----------
@@ -325,6 +342,7 @@ const chatSlice = createSlice({
       state.referralSavedMap = Object.fromEntries(
         (action.payload.referrals ?? []).map((r) => [r.id, r.saved])
       );
+      state.clientContext = action.payload.client_context ?? null;
     },
 
     // --- Referral ---
@@ -345,6 +363,26 @@ const chatSlice = createSlice({
         state.servicesCache[svc.service_id] = svc;
       }
     },
+
+    // --- Client context ---
+    setClientContext(state, action: PayloadAction<ClientContext | null>) {
+      state.clientContext = action.payload;
+    },
+
+    // --- Direct assistant message (used for clarify_request interrupt edge case) ---
+    addAssistantMessage: {
+      reducer(state, action: PayloadAction<{ id: string; content: string }>) {
+        state.messages.push({
+          id: action.payload.id,
+          role: "assistant",
+          type: "text",
+          content: action.payload.content,
+        });
+      },
+      prepare(content: string) {
+        return { payload: { id: `ai_${Date.now()}`, content } };
+      },
+    },
   },
 });
 
@@ -358,6 +396,7 @@ export const {
   streamingEnd,
   streamError,
   addUserMessage,
+  addAssistantMessage,
   setGroups,
   commitReferralMessage,
   setIntakeRequest,
@@ -367,6 +406,7 @@ export const {
   setCurrentReferral,
   setCurrentReferralSaved,
   mergeServicesCache,
+  setClientContext,
 } = chatSlice.actions;
 
 export default chatSlice.reducer;
