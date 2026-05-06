@@ -2,12 +2,14 @@ import { useCallback } from "react";
 import { useAuth0 } from "@auth0/auth0-react";
 import { useAppDispatch, useAppSelector } from "@/app/store/hooks";
 import {
+  addAssistantMessage,
   addUserMessage,
   appendPendingDelta,
   clearIntakeRequest,
   commitReferralMessage,
   commitPendingMessage,
   mergeServicesCache,
+  setClientContext,
   setConversationId,
   setCurrentReferral,
   setGroupPage,
@@ -167,6 +169,15 @@ export function useChat() {
             }
             break;
           }
+
+          case "context_updated":
+            dispatch(setClientContext(event.client_context));
+            break;
+
+          case "clarify_request":
+            dispatch(commitPendingMessage());
+            dispatch(addAssistantMessage(event.question));
+            break;
 
           case "finish":
             // Pure chat turn (no search) — commit buffered text and end streaming

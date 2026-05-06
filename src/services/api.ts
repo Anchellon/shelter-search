@@ -1,4 +1,4 @@
-import type { Service, Message, Group, ConversationSnapshot } from "@/app/store/slices/chatSlice";
+import type { ClientContext, Service, Message, Group, ConversationSnapshot } from "@/app/store/slices/chatSlice";
 import type { ConversationSummary } from "@/app/store/slices/conversationsSlice";
 
 export type { ConversationSnapshot, ConversationSummary };
@@ -35,6 +35,8 @@ export type SSEEvent =
   | { type: "intake_request"; group_id: number; group_label: string; steps: unknown[] }
   | { type: "groups_identified"; groups: unknown[] }
   | { type: "format_complete"; formatted: Record<string, { rationale: string; service_ids: number[] }>; groups?: unknown[]; referral_id?: string }
+  | { type: "context_updated"; client_context: ClientContext | null }
+  | { type: "clarify_request"; question: string }
   | { type: "finish"; finishReason: string }
   | { type: "error"; errorText: string };
 

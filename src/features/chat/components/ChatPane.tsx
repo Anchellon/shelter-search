@@ -7,6 +7,7 @@ import AIBubble from "./AIBubble";
 import GroupCards from "./GroupCards";
 import IntakeCard from "./IntakeCard";
 import ChatInput from "./ChatInput";
+import ClientContextBanner from "./ClientContextBanner";
 import ThinkingIndicator from "./ThinkingIndicator";
 import type { Message } from "@/app/store/slices/chatSlice";
 
@@ -36,6 +37,7 @@ export default function ChatPane() {
   return (
     <div className="flex flex-col h-full overflow-hidden">
       <MobileHeader />
+      <ClientContextBanner />
 
       {/* Messages */}
       <div
