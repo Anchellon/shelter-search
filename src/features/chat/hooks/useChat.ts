@@ -101,6 +101,8 @@ export function useChat() {
   const processStream = useCallback(
     async (generator: AsyncGenerator<SSEEvent>) => {
       let streamEnded = false;
+      // Buffer context updates so the banner only closes after the AI message appears
+      let pendingClientContext: import("@/app/store/slices/chatSlice").ClientContext | null | undefined = undefined;
       for await (const event of generator) {
         switch (event.type) {
           case "__conversation_id":
@@ -146,6 +148,10 @@ export function useChat() {
               dispatch(setGroups(groups));
             }
             dispatch(commitPendingMessage());
+            if (pendingClientContext !== undefined) {
+              dispatch(setClientContext(pendingClientContext));
+              pendingClientContext = undefined;
+            }
 
             const referralId = event.referral_id;
             if (referralId) {
@@ -171,17 +177,27 @@ export function useChat() {
           }
 
           case "context_updated":
-            dispatch(setClientContext(event.client_context));
+            // Buffer until after the AI message is committed so the banner
+            // only closes once the response is visible
+            pendingClientContext = event.client_context;
             break;
 
           case "clarify_request":
             dispatch(commitPendingMessage());
+            if (pendingClientContext !== undefined) {
+              dispatch(setClientContext(pendingClientContext));
+              pendingClientContext = undefined;
+            }
             dispatch(addAssistantMessage(event.question));
             break;
 
           case "finish":
             // Pure chat turn (no search) — commit buffered text and end streaming
             dispatch(commitPendingMessage());
+            if (pendingClientContext !== undefined) {
+              dispatch(setClientContext(pendingClientContext));
+              pendingClientContext = undefined;
+            }
             dispatch(streamingEnd());
             streamEnded = true;
             break;
@@ -196,6 +212,9 @@ export function useChat() {
       // Cleanup: if the stream closed without a finish/error event, flush and stop
       if (!streamEnded) {
         dispatch(commitPendingMessage());
+        if (pendingClientContext !== undefined) {
+          dispatch(setClientContext(pendingClientContext));
+        }
         dispatch(streamingEnd());
       }
     },
