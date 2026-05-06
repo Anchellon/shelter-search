@@ -261,11 +261,9 @@ const chatSlice = createSlice({
       state.groups = groups;
 
       // Insert a "referral" message after each corresponding assistant text message.
-      // Pair by order: 1st referral → after 1st assistant message, etc.
-      // Cards are not pre-selected — user clicks to activate.
+      // Pair the i-th referral (ordered by created_at ASC) with the i-th assistant
+      // message — referrals are always created for early turns, so pair from the start.
       if (referrals && referrals.length > 0) {
-        // Collect indices of all assistant messages, then pair referrals from the
-        // end so the last referral lands after the last assistant message (not the first).
         const assistantIndices: number[] = [];
         for (let i = 0; i < messages.length; i++) {
           if (messages[i].role === "assistant") assistantIndices.push(i);
@@ -273,10 +271,7 @@ const chatSlice = createSlice({
         const pairedCount = Math.min(referrals.length, assistantIndices.length);
         const insertAfter = new Map<number, typeof referrals[number]>();
         for (let i = 0; i < pairedCount; i++) {
-          insertAfter.set(
-            assistantIndices[assistantIndices.length - pairedCount + i],
-            referrals[referrals.length - pairedCount + i]
-          );
+          insertAfter.set(assistantIndices[i], referrals[i]);
         }
 
         const augmented: Message[] = [];

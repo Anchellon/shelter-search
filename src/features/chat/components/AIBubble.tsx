@@ -1,4 +1,5 @@
-import ReactMarkdown from "react-markdown";
+import { marked } from "marked";
+import { useMemo } from "react";
 
 interface Props {
   content: string;
@@ -13,21 +14,16 @@ const AIAvatar = () => (
 );
 
 export default function AIBubble({ content }: Props) {
+  const html = useMemo(() => marked.parse(content) as string, [content]);
+
   return (
     <div className="flex gap-2.5 items-start">
       <AIAvatar />
-      <div className="bg-grey-1 border border-grey-2 rounded-[2px_12px_12px_12px] px-4 py-3 max-w-[85%] text-sm text-grey-9 leading-relaxed">
-        <ReactMarkdown
-          components={{
-            p: ({ children }) => <p className="mb-2 last:mb-0">{children}</p>,
-            ul: ({ children }) => <ul className="list-disc pl-4 mb-2 space-y-1">{children}</ul>,
-            ol: ({ children }) => <ol className="list-decimal pl-4 mb-2 space-y-1">{children}</ol>,
-            li: ({ children }) => <li>{children}</li>,
-            strong: ({ children }) => <strong className="font-semibold">{children}</strong>,
-          }}
-        >
-          {content}
-        </ReactMarkdown>
+      <div className="bg-grey-1 border border-grey-2 rounded-[2px_12px_12px_12px] px-4 py-3 max-w-[85%]">
+        <div
+          className="prose prose-sm max-w-none text-grey-9 prose-headings:text-grey-9 prose-headings:font-semibold prose-p:my-1 first:prose-p:mt-0 last:prose-p:mb-0 prose-ul:my-1 prose-ol:my-1 prose-li:my-0.5 prose-strong:text-grey-9 prose-strong:font-semibold"
+          dangerouslySetInnerHTML={{ __html: html }}
+        />
       </div>
     </div>
   );
